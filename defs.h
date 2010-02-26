@@ -1,5 +1,6 @@
 #ifndef __DEFS
 #define __DEFS
+#define AHAHAHAHA
 
 #include <stdio.h>
 #include <stdlib.h>
