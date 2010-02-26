@@ -11,4 +11,6 @@ qtcreator-build*
 commit.txt
 thoughts.txt
 test
+*.o
+nex
 
