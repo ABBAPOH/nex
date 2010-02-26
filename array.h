@@ -3,11 +3,29 @@
 
 #include "defs.h"
 
-typedef struct {MPI_Comm comm; int id,index;} pointer;
+typedef struct {
+	MPI_Comm comm; 
+	int id,index;} pointer;
 
-typedef struct array1temp {pointer (*map)(int i, struct array1temp *g); void(*alloc)(struct array1temp *g); int id; MPI_Comm comm; int size,nodes,thisStart,thisSize,objSize; void *data; MPI_Win win; Topo topo;} array1;
+typedef struct array1temp {
+	pointer (*map)(int i, struct array1temp *g); 
+	void(*alloc)(struct array1temp *g); 
+	int id; 
+	MPI_Comm comm; 
+	int size,nodes,thisStart,thisSize,objSize; 
+	void *data; 
+	MPI_Win win; 
+	Topo topo;} array1;
 
-typedef struct array2temp {pointer (*map)(int x, int y, struct array2temp *g); void(*alloc)(struct array2temp *g); int id,x,y; MPI_Comm comm; int sizeX,sizeY,nodes,thisStartX,thisSizeX,thisStartY,thisSizeY,objSize; void *data; MPI_Win win; Topo topo;} array2;
+typedef struct array2temp {
+	pointer (*map)(int x, int y, struct array2temp *g); 
+	void(*alloc)(struct array2temp *g); 
+	int id,x,y; 
+	MPI_Comm comm; 
+	int sizeX,sizeY,nodes,thisStartX,thisSizeX,thisStartY,thisSizeY,objSize; 
+	void *data; 
+	MPI_Win win; 
+	Topo topo;} array2;
 
 void factorizeWithRatio(int nodes, int w, int h, int* x, int* y);
 

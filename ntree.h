@@ -5,7 +5,13 @@
 #include "fgrid2.h"
 #include "fgrid3.h"
 
-typedef struct ntreetemp {int id,pid; MPI_Comm comm; /*int *nodes;*/ int num; struct ntreetemp *parent; Topo topo;} ntree;
+typedef struct ntreetemp {
+	int id,pid; 
+	MPI_Comm comm; 
+	/*int *nodes;*/ 
+	int num; 
+	struct ntreetemp *parent; 
+	Topo topo;} ntree;
 
 void ntreeFromNative(ntree * t);
 void ntreeFromRange(ntree * t,MPI_Comm comm,int pid, ntree * parent);
