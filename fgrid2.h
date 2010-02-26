@@ -5,16 +5,16 @@
 
 typedef struct fgrid2temp
 {
-    int (*map)(int ,int ,struct fgrid2temp *g);
-    void(*reverse)(struct fgrid2temp *g);
-    int id;
-    MPI_Comm comm;
-    int x,y;
-    int w,h;
-    MPI_Comm xLine;
-    MPI_Comm yLine;
-    int xLineSelf,yLineSelf;
-    Topo topo;
+	int (*map)(int ,int ,struct fgrid2temp *g);
+	void(*reverse)(struct fgrid2temp *g);
+	int id;
+	MPI_Comm comm;
+	int x,y;
+	int w,h;
+	MPI_Comm xLine;
+	MPI_Comm yLine;
+	int xLineSelf,yLineSelf;
+	Topo topo;
 } fgrid2;
 
 int fgrid2_native(int x,int y, fgrid2 *fg);
