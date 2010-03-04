@@ -280,30 +280,40 @@ void testgrouping()
 
 void testboxA()
 {
-	Box b;
-	Box b2;
 	
-	if(!rank)printf("\n\ntestboxA\n\n");
+	
+	BoxHeader b;
+	BoxHeader b2;
+	
+	if(!rank)printf("\n\ntestboxA %d\n\n",sizeof(BoxNode));
 	MPI_Barrier(MPI_COMM_WORLD);
 	
-	boxFromNative(&b,sizeof(int));
-	boxFromNative(&b2,sizeof(int));
 	
-	int test=777;
+	boxFromNative(&b,sizeof(int));
+	boxFromNative(&b2,sizeof(int) * 10);
+	
+	int test;
+	int test2[10];
 	int *res=NULL;
 	
-	boxPut(&b,2544,&test);
+	test=777;
+	boxPut(&b,256 + 25,&test);
 	test=999;
 	boxPut(&b,25,&test);
 	
+	test=100500;
+	boxPut(&b,256 + 256 + 25,&test);
+	test=100600;
+	boxPut(&b,256 + 256 + 256 + 25,&test);
+	
 	int i;
-	for(i=1;i<35000;i++)
+	for(i=1;i<80000 ;i++)
 	{
-		test=i;
-		boxPut(&b2,i,&test);
+		test2[0]=i;
+		boxPut(&b2,i,&test2);
 	}
 	
-	for(i=1;i<35000;i++)
+	for(i=1;i<80000 ;i++)
 	{
 		res=boxGet(&b2,i);
 		if((res==NULL) || (*res!=i))
@@ -321,7 +331,7 @@ void testboxA()
 	
 	boxFree(&b);
 	boxFree(&b2);
-	MPI_Barrier(MPI_COMM_WORLD);
+	n:MPI_Barrier(MPI_COMM_WORLD);
 }
 
 int main(int argc, char **argv)

@@ -2,9 +2,7 @@
 
 uint hash_native(uint index, int lvl)
 {
-	uint res=index>>(8*(lvl-1));
-	res=res&255;
-	return res;
+	return (index>>(8*(lvl-1))   )&255;
 }
 
 void levelAlloc_native(struct boxtemp* b,int lvl)
@@ -12,16 +10,29 @@ void levelAlloc_native(struct boxtemp* b,int lvl)
 	assert(b);
 	
 	b->levelSize=256;
-	b->maxLevel=4;
-	
-	assert(b->level<=b->maxLevel);
 	
 }
 
-void boxFromNative(Box *b,int dataSize)
+void boxFromNative(BoxHeader *bh,int dataSize)
+{
+	assert(bh);
+	assert(dataSize>0);
+	
+	bh->dataSize=dataSize;
+	bh->hash=hash_native;
+	bh->levelAlloc=levelAlloc_native;
+	bh->maxLevel=4;//depends on native
+	
+	MPI_Alloc_mem( sizeof(BoxNode), MPI_INFO_NULL, &(bh->box) );
+	boxNodeNew(bh->box,bh);
+	
+	assert(bh->box->level  <=  bh->maxLevel);
+}
+
+void boxNodeNew(BoxNode *b, BoxHeader *bh)
 {
 	assert(b);
-	assert(dataSize>0);
+	assert(bh);
 	
 	b->index=-1;
 	b->level=1;
@@ -31,45 +42,54 @@ void boxFromNative(Box *b,int dataSize)
 	b->data=NULL;
 	b->nextlvl=NULL;
 	
-	b->dataSize=dataSize;
-	b->hash=hash_native;
-	b->levelAlloc=levelAlloc_native;
-	b->levelAlloc(b,b->level);
+	bh->levelAlloc(b,b->level);
+	
 }
 
-void boxFree(Box *b)
+void boxFree(BoxHeader *bh)
+{
+	assert(bh);
+	
+	bh->hash=NULL;
+	bh->levelAlloc=NULL;
+	bh->maxLevel=-1;
+	bh->dataSize=-1;
+	
+	boxNodeFree(bh->box);
+	MPI_Free_mem(bh->box);
+}
+
+void boxNodeFree(BoxNode *b)
 {
 	assert(b);
 	
-	b->hash=NULL;
-	b->levelAlloc=NULL;
+	b->numUsed=-1;
 	b->set=0;
 	b->index=-1;
 	b->level=-1;
-	b->numUsed=-1;
-	b->maxLevel=-1;
-	b->dataSize=-1;
+	
 	if(b->data != NULL)
 	{
 		MPI_Free_mem(b->data);
 		b->data=NULL;
 	}
-	b->dataSize=-1;
+	
 	if(b->nextlvl != NULL)
 	{
 		int i;
 		for(i=0;i<b->levelSize;i++)
-			boxFree(   &((b->nextlvl)[i])  );
-		MPI_Free_mem(b->nextlvl);
+			boxNodeFree(   &((b->nextlvl)[i])  );
+		//MPI_Free_mem(b->nextlvl);
+		free(b->nextlvl);
 		b->nextlvl=NULL;
 		b->levelSize=-1;
 	}
-	
 }
 
-void *boxGet(Box *b,uint index)
+void *boxNodeGet(BoxNode *b, uint index, BoxHeader *bh)
 {
 	assert(b);
+	assert(bh);
 	
 	if(!(b->set))
 		return NULL;
@@ -80,36 +100,59 @@ void *boxGet(Box *b,uint index)
 	if(b->nextlvl==NULL)
 		return NULL;
 	
-	return boxGet(  &(b->nextlvl[b->hash(index,b->level)]) ,index);
+	return boxNodeGet(  &(b->nextlvl[bh->hash(index,b->level)]) , index,bh);
 }
 
-void boxPut(Box *b,uint index,void* data)
+void boxNodePut(BoxNode *b, uint index, void* data, BoxHeader *bh, unsigned char copyFlag)
 {
 	assert(b);
+	assert(bh);
 	assert(data);
 	
 	if(b->set==0)
 	{
-		MPI_Alloc_mem( b->dataSize, MPI_INFO_NULL, &(b->data) );
-		memcpy(b->data,data, b->dataSize);
+		if(copyFlag)
+		{
+			MPI_Alloc_mem( bh->dataSize, MPI_INFO_NULL, &(b->data) );
+			memcpy(b->data,data, bh->dataSize);
+		}
+		else
+		{
+			b->data=data;
+		}
 		b->set=1;
 		b->index=index;
 		return;
 	}
 	
-	assert(b->level<=b->maxLevel);
+	assert(b->level <= bh->maxLevel);
 	
 	if(b->nextlvl==NULL)
 	{
-		MPI_Alloc_mem(sizeof(Box) * b->levelSize, MPI_INFO_NULL, &(b->nextlvl));
+		b->nextlvl=malloc(sizeof(BoxNode) * b->levelSize);
 		int i;
 		for(i=0;i<b->levelSize;i++)
 		{
-			boxFromNative(  &((b->nextlvl)[i])  ,b->dataSize);
+			boxNodeNew(  &((b->nextlvl)[i])  ,bh);
 			b->nextlvl[i].level=b->level+1;
 		}
 	}
 	
-	boxPut(  &(b->nextlvl[b->hash(index,b->level)])  ,index,data);
+	boxNodePut(  &(b->nextlvl[bh->hash(index,b->level)])  , index, data, bh, copyFlag);
 	
+}
+
+void* boxGet(BoxHeader *bh,uint index)
+{
+	assert(bh);
+	
+	return boxNodeGet(bh->box, index, bh);
+}
+
+void boxPut(BoxHeader *bh,uint index,void* data)
+{
+	assert(bh);
+	assert(data);
+	
+	boxNodePut(bh->box, index, data, bh, 1);
 }
