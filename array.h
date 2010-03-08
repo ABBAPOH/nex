@@ -6,7 +6,7 @@
 typedef struct {
 	MPI_Comm comm; 
 	int id,index;} pointer;
-
+//cache policy
 typedef struct array1temp {
 	pointer (*map)(int i, struct array1temp *g); 
 	void(*alloc)(struct array1temp *g); 

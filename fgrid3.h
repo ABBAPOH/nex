@@ -50,6 +50,7 @@ void fgrid3_reverse(fgrid3 *g);
 
 void fgrid3FromRange(fgrid3 * g, MPI_Comm comm,int x, int y, int z);
 void fgrid3FromNative(fgrid3 * g);
+void fgrid3Slice(fgrid3 * g,fgrid3 * ng, int dim, int sliceIndex);
 
 void fgrid3Free(fgrid3 * g);
 

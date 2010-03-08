@@ -290,10 +290,10 @@ void testboxA()
 	
 	
 	boxFromNative(&b,sizeof(int));
-	boxFromNative(&b2,sizeof(int) * 10);
+	boxFromNative(&b2,sizeof(int) * 400);
 	
 	int test;
-	int test2[10];
+	int test2[400];
 	int *res=NULL;
 	
 	test=777;
@@ -365,7 +365,7 @@ int main(int argc, char **argv)
 	fgrid3FromRange(&fg3,MPI_COMM_WORLD,2,2,2);
 	
 	fgrid2Slice(&fg,&slfg, 1, 1);
-	fgrid3Slice(&fg3,&slfg3, 1, 1);
+	fgrid3Slice(&fg3,&slfg3, 2, 1);
 	grid2Fromfgrid2(&g,&fg);
 	ntreeFromNative(&t);
 	//ntreeFromfgrid2(&t2,&fg);
@@ -402,7 +402,7 @@ int main(int argc, char **argv)
 	testarray1A(&ar);
 	testarray2A(&ar2);
 	
-	testboxA();
+	//testboxA();
 	
 	//testgrouping();
 	

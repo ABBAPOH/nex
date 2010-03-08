@@ -7,12 +7,12 @@
 #define BIndex int
 
 typedef struct boxtemp 
-{
-	uint index; 
+{ 
 	void* data;  
-	struct boxtemp* nextlvl; 
+	struct boxtemp* nextlvl;
+	uint index;
 	short int levelSize;  
-	short int numUsed;
+	//short int numUsed;
 	unsigned char set;
 	unsigned char level;
 } BoxNode;
@@ -22,7 +22,7 @@ typedef struct boxheadertemp
 	BoxNode *box;
 	uint (*hash)(uint , int lvl); 
 	void (*levelAlloc)(struct boxtemp* b,int lvl);
-	short int maxLevel;
+	unsigned char maxLevel;
 	int dataSize;
 } BoxHeader;
 
@@ -37,5 +37,6 @@ void* boxNodeGet(BoxNode *b,uint index, BoxHeader *bh);
 void boxNodePut(BoxNode *b,uint index,void* data, BoxHeader *bh, unsigned char copyFlag);
 void* boxGet(BoxHeader *bh,uint index);
 void boxPut(BoxHeader *bh,uint index,void* data);
+void boxPutNoCopy(BoxHeader *bh,uint index,void* data);
 
 #endif

@@ -12,14 +12,9 @@
 void fgrid3_reverse(fgrid3 *g)
 {
 	assert(g);
-	//g->x = (g->id / g->w) % g->h;
-	//g->y = (g->id % g->w);
-	//g->z = (g->id) / (g->w * g->h);
 	g->x = (g->id) / (g->w * g->l);
-	//g->y = (g->id / g->l) % g->w;
 	g->y = (g->id / g->l) % g->w;
-	g->z = (g->id) % (g->w) % (g->l);
-	
+	g->z = (g->id) % (g->w * g->l) % (g->l);
 }
 
 int fgrid3_native(int x, int y, int z, const fgrid3 *fg)
@@ -81,6 +76,7 @@ void fgrid3CreateZSide(fgrid3 * g)
 
 void fgrid3Slice(fgrid3 * g,fgrid3 * ng, int dim, int sliceIndex)
 {
+	//bug
 	assert(g);
 	assert(ng);
 	assert((dim>=0)&&(dim<3));

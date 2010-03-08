@@ -37,7 +37,7 @@ void boxNodeNew(BoxNode *b, BoxHeader *bh)
 	b->index=-1;
 	b->level=1;
 	b->set=0;
-	b->numUsed=0;
+	//b->numUsed=0;
 	
 	b->data=NULL;
 	b->nextlvl=NULL;
@@ -63,7 +63,7 @@ void boxNodeFree(BoxNode *b)
 {
 	assert(b);
 	
-	b->numUsed=-1;
+	//b->numUsed=-1;
 	b->set=0;
 	b->index=-1;
 	b->level=-1;
@@ -155,4 +155,12 @@ void boxPut(BoxHeader *bh,uint index,void* data)
 	assert(data);
 	
 	boxNodePut(bh->box, index, data, bh, 1);
+}
+
+void boxPutNoCopy(BoxHeader *bh,uint index,void* data)
+{
+	assert(bh);
+	assert(data);
+	
+	boxNodePut(bh->box, index, data, bh, 0);
 }

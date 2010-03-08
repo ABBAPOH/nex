@@ -48,6 +48,7 @@ pointer array2_map(int x, int y, array2 *a)
 
 void factorizeWithRatio(int nodes, int w, int h, int* x, int* y)
 {
+	//bug
 	//wh - array size; size - num nodes for array; xy - array dims(result)
 	assert(x);
 	assert(y);
