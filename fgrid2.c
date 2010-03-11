@@ -71,9 +71,6 @@ void fgrid2SliceLinear(fgrid2 * g,fgrid2 * ng, int xSlice, int ySlice)
 	int ww=g->w / ySlice;
 	
 	MPI_Comm_split(g->comm, (g->x / xSlice)*ww + (g->y / ySlice), 0, &(ng->comm));
-	//MPI_Comm x;
-	//MPI_Comm_split(g->comm, g->x / xSlice, 0, &(x));
-	//MPI_Comm_split(x, g->y / ySlice, 0, &(ng->comm));
 	
 	MPI_Comm_rank(ng->comm,&(ng->id));
 	

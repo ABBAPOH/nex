@@ -152,6 +152,44 @@ void fgrid3Slice(fgrid3 * g,fgrid3 * ng, int dim, int sliceIndex)
 	
 }
 
+void fgrid3SliceLinear(fgrid3 * g,fgrid3 * ng, int xSlice, int ySlice, int zSlice)
+{
+	assert(g);
+	assert(ng);
+	assert(xSlice>0);
+	assert(ySlice>0);
+	assert(zSlice>0);
+	assert((g->h % xSlice) == 0);
+	assert((g->w % ySlice) == 0);
+	assert((g->l % zSlice) == 0);
+	
+	ng->h=xSlice;
+	ng->w=ySlice;
+	ng->l=zSlice;
+	int ww=g->w / ySlice;
+	int ll=g->l / zSlice;
+	
+	MPI_Comm_split(g->comm, (g->x / xSlice)*ww*ll + (g->y / ySlice)*ll + (g->z / zSlice), 0, &(ng->comm));
+	
+	MPI_Comm_rank(ng->comm,&(ng->id));
+	
+	ng->topo.obj=g;
+	ng->topo.type=Tfgrid3;
+	
+	ng->reverse=g->reverse;
+	ng->reverse(ng);
+	ng->map=g->map;
+	
+	//!!!!!!!!!!lines
+	fgrid3CreateXYLine(ng);
+	fgrid3CreateYZLine(ng);
+	fgrid3CreateXZLine(ng);
+	fgrid3CreateXSide(ng);
+	fgrid3CreateYSide(ng);
+	fgrid3CreateZSide(ng);
+	//!!!!!!!!!!untested
+}
+
 void fgrid3FromRange(fgrid3 * g, MPI_Comm comm, int x, int y, int z)
 {
 	assert(g);
