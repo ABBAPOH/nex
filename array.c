@@ -105,7 +105,6 @@ void array2_alloc(array2 *a)
 	{
 		case Tnone:
 		{
-			printf("HERE\n");
 			factorizeWithRatio(a->nodes,a->sizeY,a->sizeX,&(a->thisSizeX),&(a->thisSizeY));
 			int xmax=a->sizeX / a->thisSizeX;
 			int ymax=a->sizeY / a->thisSizeY;

@@ -28,6 +28,7 @@ void fgrid2FromNative(fgrid2 * g);
 void fgrid2Free(fgrid2 * g);
 
 void fgrid2Slice(fgrid2 * g,fgrid2 * ng, int dim, int sliceIndex);
+void fgrid2SliceLinear(fgrid2 * g,fgrid2 * ng, int xSlice, int ySlice);
 void fgrid2Barrier(fgrid2 * g);
 
 #endif

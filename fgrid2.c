@@ -57,6 +57,39 @@ void fgrid2Slice(fgrid2 * g,fgrid2 * ng, int dim, int sliceIndex)
 	
 }
 
+void fgrid2SliceLinear(fgrid2 * g,fgrid2 * ng, int xSlice, int ySlice)
+{
+	assert(g);
+	assert(ng);
+	assert(xSlice>0);
+	assert(ySlice>0);
+	assert((g->h % xSlice) == 0);
+	assert((g->w % ySlice) == 0);
+	
+	ng->h=xSlice;
+	ng->w=ySlice;
+	int ww=g->w / ySlice;
+	
+	MPI_Comm_split(g->comm, (g->x / xSlice)*ww + (g->y / ySlice), 0, &(ng->comm));
+	//MPI_Comm x;
+	//MPI_Comm_split(g->comm, g->x / xSlice, 0, &(x));
+	//MPI_Comm_split(x, g->y / ySlice, 0, &(ng->comm));
+	
+	MPI_Comm_rank(ng->comm,&(ng->id));
+	
+	ng->topo.obj=g;
+	ng->topo.type=Tfgrid2;
+	
+	ng->reverse=g->reverse;
+	ng->reverse(ng);
+	ng->map=g->map;
+	
+	//!!!!!!!!!!lines
+	fgrid2CreateXLine(ng);
+	fgrid2CreateYLine(ng);
+	//!!!!!!!!!!untested
+}
+
 int fgrid2_native(int x,int y, fgrid2 *fg)
 {
 	assert((x<fg->h) && (y<fg->w) && (x>=0) && (y>=0));//?

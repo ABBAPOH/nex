@@ -61,6 +61,19 @@ void testmdaA()
 	MPI_Barrier(MPI_COMM_WORLD);
 }
 
+void testfgrid2A(fgrid2 * fg2, fgrid2 * slfg2)
+{
+	assert(fg2);
+	assert(slfg2);
+	
+	if(fg2->id==0)printf("\n\ntestfgrid2A\n\n");
+	MPI_Barrier(fg2->comm);
+	
+	printf("rank=%d | (%d,%d)[%d,%d] | (%d,%d)[%d,%d]\n",rank, fg2->x, fg2->y, fg2->h, fg2->w    , slfg2->x, slfg2->y, slfg2->h, slfg2->w);
+	
+	MPI_Barrier(fg2->comm);
+}
+
 void testarray1A(array1 *a)
 {
 	assert(a);
@@ -381,6 +394,7 @@ int main(int argc, char **argv)
 	grid2 g;
 	fgrid2 fg;
 	fgrid2 slfg;
+	fgrid2 sllfg;
 	fgrid3 fg3;
 	fgrid3 slfg3;
 	ntree t;
@@ -403,6 +417,8 @@ int main(int argc, char **argv)
 	
 	fgrid2Slice(&fg,&slfg, 1, 1);
 	fgrid3Slice(&fg3,&slfg3, 2, 1);
+	fgrid2SliceLinear(&fg,&sllfg, 1, 2);
+	
 	grid2Fromfgrid2(&g,&fg);
 	ntreeFromNative(&t);
 	//ntreeFromfgrid2(&t2,&fg);
@@ -431,6 +447,7 @@ int main(int argc, char **argv)
 	MPI_Barrier(MPI_COMM_WORLD);
 	
 	testntreeA(&t3);
+	testfgrid2A(&fg, &sllfg);
 	testfgrid3B(&fg3);
 	testfgrid3B(&slfg3);
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -454,6 +471,7 @@ int main(int argc, char **argv)
 	
 	fgrid2Free(&fg);
 	fgrid2Free(&slfg);
+	fgrid2Free(&sllfg);
 	
 	fgrid3Free(&fg3);
 	fgrid3Free(&slfg3);
