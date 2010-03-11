@@ -285,7 +285,7 @@ void testboxA()
 	BoxHeader b;
 	BoxHeader b2;
 	
-	if(!rank)printf("\n\ntestboxA %d\n\n",sizeof(BoxNode));
+	if(!rank)printf("\n\ntestboxA\n\n");
 	MPI_Barrier(MPI_COMM_WORLD);
 	
 	
@@ -332,6 +332,43 @@ void testboxA()
 	boxFree(&b);
 	boxFree(&b2);
 	n:MPI_Barrier(MPI_COMM_WORLD);
+}
+
+void mapFunc_my(void* obj, uint index, BoxHeader *bh)
+{
+	printf("## [%d] == %d\n", index, *((int*)obj));
+}
+
+int ifFunc_my(uint index)
+{
+	return (index % 10)!=5; 
+}
+
+void testboxB()
+{
+	BoxHeader b;
+	
+	if(!rank)printf("\n\ntestboxB\n\n");
+	MPI_Barrier(MPI_COMM_WORLD);
+	
+	int test;
+	
+	boxFromNative(&b,sizeof(int));
+	
+	test=777;
+	boxPut(&b,256 + 25,&test);
+	test=999;
+	boxPut(&b,25,&test);
+	
+	test=100500;
+	boxPut(&b,256 + 256 + 25,&test);
+	test=100600;
+	boxPut(&b,256 + 256 + 256 + 25,&test);
+	
+	boxMapSome(&b, &mapFunc_my, ifFunc_my);
+	
+	boxFree(&b);
+	MPI_Barrier(MPI_COMM_WORLD);
 }
 
 int main(int argc, char **argv)
@@ -403,6 +440,7 @@ int main(int argc, char **argv)
 	testarray2A(&ar2);
 	
 	//testboxA();
+	testboxB();
 	
 	//testgrouping();
 	

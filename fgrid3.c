@@ -76,7 +76,6 @@ void fgrid3CreateZSide(fgrid3 * g)
 
 void fgrid3Slice(fgrid3 * g,fgrid3 * ng, int dim, int sliceIndex)
 {
-	//bug
 	assert(g);
 	assert(ng);
 	assert((dim>=0)&&(dim<3));

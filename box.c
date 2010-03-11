@@ -164,3 +164,41 @@ void boxPutNoCopy(BoxHeader *bh,uint index,void* data)
 	
 	boxNodePut(bh->box, index, data, bh, 0);
 }
+
+void boxMapRec(BoxHeader *bh, BoxNode *b, void (*mapFunc)(void* obj, uint index, BoxHeader *bh), int (*ifFunc)(uint index))
+{
+	//private
+	assert(bh);
+	assert(b);
+	assert(mapFunc);
+	
+	if((b->set) && ( (ifFunc==NULL)  ||  (ifFunc(b->index)) ))
+	{
+		mapFunc(b->data, b->index, bh);
+	}
+	
+	if(b->nextlvl!=NULL)
+	{
+		int i;
+		for(i=0;i<b->levelSize;i++)
+			boxMapRec(bh, &(b->nextlvl[i]), mapFunc, ifFunc);
+	}
+	
+	return;
+}
+
+void boxMapAll(BoxHeader *bh, void (*mapFunc)(void* obj, uint index, BoxHeader *bh))
+{
+	assert(bh);
+	assert(mapFunc);
+	
+	boxMapRec(bh, bh->box, mapFunc, NULL);
+}
+
+void boxMapSome(BoxHeader *bh, void (*mapFunc)(void* obj, uint index, BoxHeader *bh), int (*ifFunc)(uint index))
+{
+	assert(bh);
+	assert(mapFunc);
+	
+	boxMapRec(bh, bh->box, mapFunc, ifFunc);
+}
