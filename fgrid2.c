@@ -87,6 +87,34 @@ void fgrid2SliceLinear(fgrid2 * g,fgrid2 * ng, int xSlice, int ySlice)
 	//!!!!!!!!!!untested
 }
 
+void fgrid2SliceParts(fgrid2 * g,fgrid2 * ng, int* xParts, int* yParts, int xSize, int ySize)
+{
+	assert(g);
+	assert(ng);
+	assert(xParts);
+	assert(yParts);
+	assert(xSize>0);
+	assert(ySize>0);
+	
+	int i;
+	int* xSum=malloc(sizeof(int) * xSize);
+	int* ySum=malloc(sizeof(int) * ySize);
+	
+	xSum[0]=0;
+	ySum[0]=0;
+	
+	for(i=1;i<xSize;i++)
+		xSum[i]=xParts[i-1]+xSum[i-1];
+	for(i=1;i<ySize;i++)
+		ySum[i]=yParts[i-1]+ySum[i-1];
+	
+	assert( ! (g->h - xSum[xSize-1] - xParts[xSize-1]) );
+	assert( ! (g->w - ySum[ySize-1] - yParts[ySize-1]) );
+	
+	free(xSum);
+	free(ySum);
+}
+
 int fgrid2_native(int x,int y, fgrid2 *fg)
 {
 	assert((x<fg->h) && (y<fg->w) && (x>=0) && (y>=0));//?

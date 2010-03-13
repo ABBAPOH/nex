@@ -408,6 +408,7 @@ int main(int argc, char **argv)
 	fgrid2 fg;
 	fgrid2 slfg;
 	fgrid2 sllfg;
+	fgrid2 slpfg;
 	fgrid3 fg3;
 	fgrid3 slfg3;
 	fgrid3 sllfg3;
@@ -429,10 +430,14 @@ int main(int argc, char **argv)
 // 	fgrid3FromNative(&fg3);
 	fgrid3FromRange(&fg3,MPI_COMM_WORLD,2,2,2);
 	
+	int xParts[]={2};
+	int yParts[]={1,2,1};
+	
 	fgrid2Slice(&fg,&slfg, 1, 1);
 	fgrid3Slice(&fg3,&slfg3, 2, 1);
 	fgrid2SliceLinear(&fg,&sllfg, 1, 2);
 	fgrid3SliceLinear(&fg3,&sllfg3, 2, 1, 2);
+	fgrid2SliceParts(&fg,&sllfg, xParts, yParts, 1, 3);
 	
 	grid2Fromfgrid2(&g,&fg);
 	ntreeFromNative(&t);
