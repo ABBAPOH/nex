@@ -5,7 +5,7 @@
 
 typedef struct fgrid2temp
 {
-	int (*map)(int ,int ,struct fgrid2temp *g);
+	int (*map)(int, int, struct fgrid2temp *g);
 	void(*reverse)(struct fgrid2temp *g);
 	int id;
 	MPI_Comm comm;
@@ -22,7 +22,7 @@ void fgrid2_reverse(fgrid2 *g);
 void fgrid2CreateXLine(fgrid2 * g);
 void fgrid2CreateYLine(fgrid2 * g);
 
-void fgrid2FromRange(fgrid2 * g,MPI_Comm comm,int x, int y);
+void fgrid2FromRange(fgrid2 * g,MPI_Comm comm, int x, int y);
 void fgrid2FromNative(fgrid2 * g);
 
 void fgrid2Free(fgrid2 * g);
