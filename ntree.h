@@ -11,7 +11,8 @@ typedef struct ntreetemp {
 	/*int *nodes;*/ 
 	int num; 
 	struct ntreetemp *parent; 
-	Topo topo;} ntree;
+	Topo topo;
+} ntree;
 
 void ntreeFromNative(ntree * t);
 void ntreeFromRange(ntree * t,MPI_Comm comm,int pid, ntree * parent);

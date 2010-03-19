@@ -1,5 +1,12 @@
 #include "ntree.h"
 
+
+/*!
+  \fn void ntreeFromNative(ntree * t)
+  \brief Creates tree close to hardware. Has only one root with chils (one level deep tree)
+
+  Реализация специфична для данной платформы
+*/
 void ntreeFromNative(ntree * t)
 {
 	assert(t);
@@ -10,6 +17,64 @@ void ntreeFromNative(ntree * t)
 	t->topo.obj=NULL;
 }
 
+/*!
+  \fn void ntreeFromRange(ntree * t, MPI_Comm comm, int pid, ntree * parent)
+  \brief Creates one level tree close to hardware using communicator \a comm, root \a pid and parent tree \a parent
+
+  Родитель фактически задан двумя способами - через ранк \a pid и дерево \a parent
+*/
+void ntreeFromRange(ntree * t, MPI_Comm comm, int pid, ntree * parent)
+{
+	assert(t);
+
+	int i;
+
+	MPI_Comm_dup(comm, &(t->comm));
+	MPI_Comm_rank(t->comm,&(t->id));
+	t->pid=pid;
+	t->parent=parent;
+
+	MPI_Comm_size(t->comm,&(t->num));
+
+	/*t->nodes=malloc(sizeof(int) * t->num);
+	for(i=0;i<t->num;i++)
+		t->nodes[i]=i;*/
+
+	t->topo.type=Tnone;
+	t->topo.obj=NULL;
+
+}
+
+/*!
+  \fn void ntreeFromfgrid2(ntree * t, fgrid2* fg)
+  \brief Creates one level tree from two-dimensional grid
+
+  Создается двухуровневое дерево, в первый уровень входит первый столбец (Y == 0), а на нижнем уровне - все строки.
+*/
+void ntreeFromfgrid2(ntree * t, fgrid2* fg)
+{
+	assert(t);
+	assert(fg);
+	ntree * pt=NULL;
+	if(fg->y==0)
+	{
+		pt=malloc(sizeof(ntree));
+		ntreeFromRange(pt,fg->yLine,0,NULL);
+		pt->topo.type=Tfgrid2;
+		pt->topo.obj=fg;
+	}
+
+	ntreeFromRange(t,fg->xLine,0,pt);
+	t->topo.type=Tfgrid2;
+	t->topo.obj=fg;
+}
+
+/*!
+  \fn void ntreeFromfgrid2Trans(ntree * t,fgrid2* fg)
+  \brief Creates one level tree from two-dimensional grid
+
+  Создается двухуровневое дерево, в первый уровень входит первый строка (X == 0), а на нижнем уровне - все столбцы.
+*/
 void ntreeFromfgrid2Trans(ntree * t,fgrid2* fg)
 {
 	assert(t);
@@ -32,7 +97,15 @@ void ntreeFromfgrid2Trans(ntree * t,fgrid2* fg)
 	
 }
 
-void ntreeFromfgrid2Param(ntree * t,fgrid2* fg,int orient,int toproot, int bottomroot)
+/*!
+  \fn void ntreeFromfgrid2Param(ntree * t, fgrid2* fg, int orient, int toproot, int bottomroot)
+  \brief Creates one level tree from two-dimensional grid, using special parameters
+
+  Если \a orient == 0, то на первом уровне - столбец (на нижнем - строки), если нет - то на первом уровне строка (а на нижнем - столбцы).
+  \a bottomroot - номер столбца (\a orient == 0) или строки (\a orient != 0), в которой находятся корни для нижнего уровня.
+  \a toproot - позиция корневого процесса в этом столбце (или строке соответственно).
+*/
+void ntreeFromfgrid2Param(ntree * t, fgrid2* fg, int orient, int toproot, int bottomroot)
 {
 	assert(t);
 	assert(fg);
@@ -68,31 +141,20 @@ void ntreeFromfgrid2Param(ntree * t,fgrid2* fg,int orient,int toproot, int botto
 	t->topo.obj=fg;
 }
 
-void ntreeFromfgrid2(ntree * t,fgrid2* fg)
-{
-	assert(t);
-	assert(fg);
-	ntree * pt=NULL;
-	if(fg->y==0)
-	{
-		pt=malloc(sizeof(ntree));
-		ntreeFromRange(pt,fg->yLine,0,NULL);
-		pt->topo.type=Tfgrid2;
-		pt->topo.obj=fg;
-	}
-	
-	ntreeFromRange(t,fg->xLine,0,pt);
-	t->topo.type=Tfgrid2;
-	t->topo.obj=fg;
-}
+/*!
+  \fn void ntreeFromfgrid3(ntree * t, fgrid3* fg)
+  \brief Creates three level tree from three-dimensional grid
 
-void ntreeFromfgrid3(ntree * t,fgrid3* fg)
+  Главный корень имеет координаты (0, 0, 0)
+  На втором уровне грань, у которой Z == 0
+  На третьем уровне строка, у которой Z == 0 и
+*/
+void ntreeFromfgrid3(ntree * t, fgrid3* fg)
 {
 	assert(t);
 	assert(fg);
 	ntree * pt=NULL;
 	ntree * ppt=NULL;
-	
 	
 	if((fg->y==0) && (fg->z==0))
 	{
@@ -115,28 +177,11 @@ void ntreeFromfgrid3(ntree * t,fgrid3* fg)
 	t->topo.obj=fg;
 }
 
-void ntreeFromRange(ntree * t,MPI_Comm comm,int pid, ntree * parent)
-{
-	assert(t);
+/*!
+  \fn void ntreeFree(ntree * t)
+  \brief Frees tree \a t. Fills it's field with -1.
 
-	int i;
-	
-	MPI_Comm_dup(comm, &(t->comm));
-	MPI_Comm_rank(t->comm,&(t->id));
-	t->pid=pid;
-	t->parent=parent;
-	
-	MPI_Comm_size(t->comm,&(t->num));
-	
-	/*t->nodes=malloc(sizeof(int) * t->num);
-	for(i=0;i<t->num;i++)
-		t->nodes[i]=i;*/
-	
-	t->topo.type=Tnone;
-	t->topo.obj=NULL;
-	
-}
-
+*/
 void ntreeFree(ntree * t)
 {
 	assert(t);
@@ -153,7 +198,18 @@ void ntreeFree(ntree * t)
 	t->topo.obj=NULL;
 }
 
-void ntreeBCast(ntree * t,void* buffer, int count, MPI_Datatype datatype)
+/*!
+  \fn void ntreeBCast(ntree * t,void* buffer, int count, MPI_Datatype datatype)
+  \brief Broadcasts data over the tree
+
+  \param t Tree to broadcast data
+  \param buffer Data itself
+  \param count Number of elements
+  \param datatype Type of data
+
+  This function is a wrapper over MPI broadcast
+*/
+void ntreeBCast(ntree * t, void* buffer, int count, MPI_Datatype datatype)
 {
 	assert(t);
 	assert(buffer);
@@ -167,7 +223,20 @@ void ntreeBCast(ntree * t,void* buffer, int count, MPI_Datatype datatype)
 	//printf("%sbcast called\n",((t->id==t->pid))?"root ":"");
 }
 
-void ntreeReduce(ntree * t,void* sendbuf, void* recvbuf, int count, MPI_Datatype datatype, MPI_Op op)
+/*!
+  \fn void ntreeReduce(ntree * t, void* sendbuf, void* recvbuf, int count, MPI_Datatype datatype, MPI_Op op)
+  \brief Computes reduce operation over the tree
+
+  \param t Target tree
+  \param sendbuf Input data
+  \param recvbuf Output data
+  \param count Number of elements
+  \param datatype Type of data
+  \param op MPI reduce operation (i.e. sum, mul etc.)
+
+  This function is a wrapper over MPI reduce
+*/
+void ntreeReduce(ntree * t, void* sendbuf, void* recvbuf, int count, MPI_Datatype datatype, MPI_Op op)
 {
 	assert(t);
 	assert(sendbuf);
@@ -197,7 +266,19 @@ void ntreeReduce(ntree * t,void* sendbuf, void* recvbuf, int count, MPI_Datatype
 	
 }
 
-int ntreeGather(ntree * t,void *sendbuf, int sendcount, MPI_Datatype datatype, void **recvbuf)
+/*!
+  \fn int ntreeGather(ntree * t, void *sendbuf, int sendcount, MPI_Datatype datatype, void **recvbuf)
+  \brief Gathers data from tree
+
+  \param t Target tree
+  \param sendbuf Input data
+  \param sendcount Number of elements
+  \param datatype Type of data
+  \param recvbuf Output data
+
+  This function is a wrapper over MPI gather
+*/
+int ntreeGather(ntree * t, void *sendbuf, int sendcount, MPI_Datatype datatype, void **recvbuf)
 {
 	assert(t);
 	assert(sendbuf);
@@ -228,7 +309,19 @@ int ntreeGather(ntree * t,void *sendbuf, int sendcount, MPI_Datatype datatype, v
 	return numNodes*sendcount;
 }
 
- void ntreeScatter(ntree * t,void *sendbuf, int sendcount, MPI_Datatype datatype, void *recvbuf)
+/*!
+  \fn void ntreeScatter(ntree * t, void *sendbuf, int sendcount, MPI_Datatype datatype, void *recvbuf)
+  \brief Scatters data over tree
+
+  \param t Target tree
+  \param sendbuf Input data
+  \param sendcount Number of elements
+  \param datatype Type of data
+  \param recvbuf Output data
+
+  This function is a wrapper over MPI scatter
+*/
+void ntreeScatter(ntree * t, void *sendbuf, int sendcount, MPI_Datatype datatype, void *recvbuf)
 {
 	assert(t);
 	assert(sendbuf || (t->id!=t->pid));
@@ -257,6 +350,11 @@ int ntreeGather(ntree * t,void *sendbuf, int sendcount, MPI_Datatype datatype, v
 	
 }
 
+/*!
+  \fn int ntreeIsMegaRoot(ntree * t)
+  \brief Returns 1 if t is mega root
+
+*/
 int ntreeIsMegaRoot(ntree * t)
 {
 	assert(t);
@@ -265,6 +363,11 @@ int ntreeIsMegaRoot(ntree * t)
 	return t->id==t->pid;
 }
 
+/*!
+ \fn void ntreeBarrier(ntree * t)
+ \brief Locks barrier on the whole tree \a t
+
+*/
 void ntreeBarrier(ntree * t)
 {
 	assert(t);
