@@ -45,7 +45,7 @@ void fgrid3CreateXZLine(fgrid3 * g);
 void fgrid3CreateXSide(fgrid3 * g);
 void fgrid3CreateYSide(fgrid3 * g);
 void fgrid3CreateZSide(fgrid3 * g);
-int fgrid3_native(int x, int y, int z, const fgrid3 *fg);
+int fgrid3_native(int x, int y, int z, fgrid3 *fg);
 void fgrid3_reverse(fgrid3 *g);
 
 void fgrid3FromRange(fgrid3 * g, MPI_Comm comm,int x, int y, int z);

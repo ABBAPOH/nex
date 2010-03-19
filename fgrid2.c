@@ -149,6 +149,7 @@ void fgrid2Free(fgrid2 * g)
  \param[in] dim If \a dim == 0 sliced by X coordinate, if \a dim != 0 grid is sliced by y
  \param[in] sliceIndex Index by which grid is sliced (sliceIndex included into second topology)
 
+ На самом деле, создается 2 топологии, но возвращается только одна - та, в кторой находится текущий процесс
  Элемент с номером sliceIndex вхожит во вторую топологию.
  Функция возвращает только одну из 2х топологий, в зависимости от того, в какой из них находится текущий процесс. В новую топологию устанавливается ссылка на старую.
  */
@@ -206,8 +207,9 @@ void fgrid2Slice(fgrid2 * g, fgrid2 * ng, int dim, int sliceIndex)
  \brief Slices existing grid \a g by \a xSlice and \a ySlice lines and columns
  
  Разделяет сетку по координатам xSlice ySlice.
- Функция возвращает только одну из 4х топологий, в зависимости от того, в какой из них находится текущий процесс. В новую топологию устанавливается ссылка на старую.
- */
+ Несмотря на то, что создается много новых сеток (4), возвращается только одна - та, в которой находится текущий процесс
+ В новую топологию устанавливается ссылка на старую.
+*/
 void fgrid2SliceLinear(fgrid2 * g, fgrid2 * ng, int xSlice, int ySlice)
 {
 	assert(g);
@@ -268,9 +270,9 @@ void fgrid2SliceParts(fgrid2 * g, fgrid2 * ng, int* xParts, int* yParts, int xSi
 
 /*!
  \fn void fgrid2Barrier(fgrid2 * g)
- \brief Locks barrieir on the whole grid
- 
- */
+ \brief Locks barrier on the whole grid \a g
+
+*/
 void fgrid2Barrier(fgrid2 * g)
 {
 	assert(g);
