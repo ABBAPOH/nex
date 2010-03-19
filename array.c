@@ -1,5 +1,65 @@
 #include "array.h"
 
+/*!
+  \fn void factorizeWithRatio(int nodes, int w, int h, int* x, int* y)
+  \brief Maps array[\a w][\a h] and number of \a nodes to size (\a x and \a y) of local part (in current process) of array
+
+*/
+void factorizeWithRatio(int nodes, int w, int h, int* x, int* y)
+{
+	//bug
+	//wh - array size; size - num nodes for array; xy - array dims(result)
+	assert(x);
+	assert(y);
+	assert((nodes>0) && (w>0) && (h>0));
+
+	//simple variant
+	assert((w * h) % nodes == 0);
+
+	int perX=nodes/w;
+	int perY=nodes/h;
+	int perNode=(int)(w*h)/nodes;//3
+	int nodeX;
+	int nodeY;
+
+	int i=(int)(sqrt(perNode*h/w)); //closest to optimal nodeY //2
+	int j=i;
+	int res=-1;
+
+	//printf("i=%d\n",i);
+
+	while((i>1) || ((j<=perNode)))
+	{
+		if(i && ((perNode%i)==0) && /*((perX%i)==0) &&*/ ((perY%(perNode/i))==0))
+		{
+			res=i;
+			break;
+		}
+		if(j && ((perNode%j)==0) && /*((perX%j)==0) &&*/ ((perY%(perNode/j))==0))
+		{
+			res=j;
+			break;
+		}
+		if(i>1) i--;
+		if(j<=perNode) j++;
+	}
+
+	if(res==-1)
+		res=1;
+
+	nodeY=res;
+	nodeX=perNode/res;
+
+	*y=nodeX;
+	*x=nodeY;
+
+}
+
+/*!
+  \fn pointer array1_map(int i, array1 *a)
+  \brief Returns pointer to process containing a[i] element and local index in this process (a[i] -> {pid, offset})
+
+*/
 pointer array1_map(int i, array1 *a)
 {
 	assert(a);
@@ -12,6 +72,11 @@ pointer array1_map(int i, array1 *a)
 	return p;
 }
 
+/*!
+  \fn void array1_alloc(array1 *a)
+  \brief Allocates memory for local part of array \a a.
+
+*/
 void array1_alloc(array1 *a)
 {
 	assert(a);
@@ -25,6 +90,11 @@ void array1_alloc(array1 *a)
 	MPI_Win_create(a->data,a->thisSize * a->objSize,a->objSize,MPI_INFO_NULL,a->comm,&(a->win));
 }
 
+/*!
+  \fn pointer array2_map(int x, int y, array2 *a)
+  \brief Returns pointer to process containing a[x][y] element and local index in this process (a[x][y] -> {pid, offset}).
+
+*/
 pointer array2_map(int x, int y, array2 *a)
 {
 	assert(a);
@@ -46,61 +116,16 @@ pointer array2_map(int x, int y, array2 *a)
 	return p;
 }
 
-void factorizeWithRatio(int nodes, int w, int h, int* x, int* y)
-{
-	//bug
-	//wh - array size; size - num nodes for array; xy - array dims(result)
-	assert(x);
-	assert(y);
-	assert((nodes>0) && (w>0) && (h>0));
-	
-	//simple variant
-	assert((w * h) % nodes == 0);
-	
-	int perX=nodes/w;
-	int perY=nodes/h;
-	int perNode=(int)(w*h)/nodes;//3
-	int nodeX;
-	int nodeY;
-	
-	int i=(int)(sqrt(perNode*h/w)); //closest to optimal nodeY //2
-	int j=i;
-	int res=-1;
-	
-	//printf("i=%d\n",i);
-	
-	while((i>1) || ((j<=perNode)))
-	{
-		if(i && ((perNode%i)==0) && /*((perX%i)==0) &&*/ ((perY%(perNode/i))==0))
-		{
-			res=i;
-			break;
-		}
-		if(j && ((perNode%j)==0) && /*((perX%j)==0) &&*/ ((perY%(perNode/j))==0))
-		{
-			res=j;
-			break;
-		}
-		if(i>1) i--;
-		if(j<=perNode) j++;
-	}
-	
-	if(res==-1)
-		res=1;
-	
-	nodeY=res;
-	nodeX=perNode/res;
-	
-	*y=nodeX;
-	*x=nodeY;
-	
-}
+/*!
+  \fn void array2_alloc(array2 *a)
+  \brief Allocates memory for local part of array \a a.
 
+*/
 void array2_alloc(array2 *a)
 {
 	assert(a);
 	assert( (a->sizeX * a->sizeY) % a->nodes ==0);
-	
+
 	switch(a->topo.type)
 	{
 		case Tnone:
@@ -108,31 +133,98 @@ void array2_alloc(array2 *a)
 			factorizeWithRatio(a->nodes,a->sizeY,a->sizeX,&(a->thisSizeX),&(a->thisSizeY));
 			int xmax=a->sizeX / a->thisSizeX;
 			int ymax=a->sizeY / a->thisSizeY;
-			
+
 			a->x=(int) ((a->id)/ymax);
 			a->y=(int) ((a->id)%ymax);
-			
+
 			a->thisStartX=a->thisSizeX * a->x;
 			a->thisStartY=a->thisSizeY * a->y;
 		}	break;
-		
+
 		case Tfgrid2:
 		{
 			assert(0);//not writen
 		}	break;
-		
+
 		default:
 		{
 			assert(0);//not writen
 		}	break;
-		
+
 	}
-	
+
 	MPI_Alloc_mem( a->thisSizeX * a->thisSizeY * a->objSize, MPI_INFO_NULL, &(a->data) );
 
 	MPI_Win_create(a->data,a->thisSizeX * a->thisSizeY * a->objSize,a->objSize,MPI_INFO_NULL,a->comm,&(a->win));
 }
 
+/*!
+  \fn void array1Free(array1 *a)
+  \brief Frees array \a a.
+
+  Fills data of an array with -1
+*/
+void array1Free(array1 *a)
+{
+	assert(a);
+
+	if(a->data!=NULL)
+	{
+		MPI_Win_free(&(a->win));
+		MPI_Free_mem(a->data);
+		a->data=NULL;
+	}
+	MPI_Comm_free(&(a->comm));
+
+	a->id=-1;
+	a->size=a->nodes=-1;
+	a->thisSize=a->thisStart=-1;
+	a->objSize=-1;
+
+	a->map=NULL;
+	a->alloc=NULL;
+
+	a->topo.type=Tnone;
+	a->topo.obj=NULL;
+}
+
+/*!
+  \fn void array2Free(array2 *a)
+  \brief Frees array \a a.
+
+  Fills data of an array with -1
+*/
+void array2Free(array2 *a)
+{
+	assert(a);
+
+	if(a->data!=NULL)
+	{
+		MPI_Win_free(&(a->win));
+		MPI_Free_mem(a->data);
+		a->data=NULL;
+	}
+	MPI_Comm_free(&(a->comm));
+
+	a->id=-1;
+	a->y=-1;
+	a->x=-1;
+	a->sizeX=a->sizeY=a->nodes=-1;
+	a->thisSizeX=a->thisStartX=a->thisSizeY=a->thisStartY=-1;
+	a->objSize=-1;
+
+	a->map=NULL;
+	a->alloc=NULL;
+
+	a->topo.type=Tnone;
+	a->topo.obj=NULL;
+}
+
+/*!
+  \fn void array1FromRange(array1 *a, MPI_Comm comm, int size, int objSize)
+  \brief Creates one-dimensional array with size \a size and element size \a objSize from communicator \a comm.
+
+*/
 void array1FromRange(array1 *a, MPI_Comm comm, int size, int objSize)
 {
 	assert(a);
@@ -155,6 +247,11 @@ void array1FromRange(array1 *a, MPI_Comm comm, int size, int objSize)
 	
 }
 
+/*!
+  \fn void array2FromRange(array2 *a, MPI_Comm comm, int sizeX, int sizeY, int objSize)
+  \brief Creates two-dimensional array with size \a sizeX*\a sizeY and element size \a objSize from communicator \a comm.
+
+*/
 void array2FromRange(array2 *a, MPI_Comm comm, int sizeX, int sizeY, int objSize)
 {
 	assert(a);
@@ -177,56 +274,11 @@ void array2FromRange(array2 *a, MPI_Comm comm, int sizeX, int sizeY, int objSize
 	a->map=(pointer(*)(int x, int y,array2 *a)) (array2_map);
 }
 
-void array1Free(array1 *a)
-{
-	assert(a);
-	
-	if(a->data!=NULL)
-	{
-		MPI_Win_free(&(a->win));
-		MPI_Free_mem(a->data);
-		a->data=NULL;
-	}
-	MPI_Comm_free(&(a->comm));
-	
-	a->id=-1;
-	a->size=a->nodes=-1;
-	a->thisSize=a->thisStart=-1;
-	a->objSize=-1;
-	
-	a->map=NULL;
-	a->alloc=NULL;
-	
-	a->topo.type=Tnone;
-	a->topo.obj=NULL;
-}
+/*!
+  \fn void array1Put(array1 *a, int i, void *send)
+  \brief Sends element \a send to \a a[\a i]
 
-void array2Free(array2 *a)
-{
-	assert(a);
-	
-	if(a->data!=NULL)
-	{
-		MPI_Win_free(&(a->win));
-		MPI_Free_mem(a->data);
-		a->data=NULL;
-	}
-	MPI_Comm_free(&(a->comm));
-	
-	a->id=-1;
-	a->y=-1;
-	a->x=-1;
-	a->sizeX=a->sizeY=a->nodes=-1;
-	a->thisSizeX=a->thisStartX=a->thisSizeY=a->thisStartY=-1;
-	a->objSize=-1;
-	
-	a->map=NULL;
-	a->alloc=NULL;
-	
-	a->topo.type=Tnone;
-	a->topo.obj=NULL;
-}
-
+*/
 void array1Put(array1 *a, int i, void *send)
 {
 	assert(a);
@@ -237,6 +289,11 @@ void array1Put(array1 *a, int i, void *send)
 	
 }
 
+/*!
+  \fn void array2Put(array2 *a, int x, int y, void *send)
+  \brief Sends element \a send to \a a[\a x][\a y]
+
+*/
 void array2Put(array2 *a, int x, int y, void *send)
 {
 	assert(a);
@@ -247,7 +304,12 @@ void array2Put(array2 *a, int x, int y, void *send)
 	
 }
 
-void array1Get(array1 *a, int i,void**recv)
+/*!
+  \fn void array1Get(array1 *a, int i,void**recv)
+  \brief Gets element \a a[\a i] to \a recv
+
+*/
+void array1Get(array1 *a, int i, void**recv)
 {
 	assert(a);
 	assert(recv);
@@ -258,7 +320,12 @@ void array1Get(array1 *a, int i,void**recv)
 	MPI_Get(*recv, a->objSize, MPI_CHAR, p.id, p.index, a->objSize, MPI_CHAR, a->win);
 }
 
-void array2Get(array2 *a, int x, int y,void**recv)
+/*!
+  \fn void array2Get(array2 *a, int x, int y, void**recv)
+  \brief Gets element \a a[\a x][\a y] to \a recv
+
+*/
+void array2Get(array2 *a, int x, int y, void**recv)
 {
 	assert(a);
 	assert(recv);
@@ -269,12 +336,26 @@ void array2Get(array2 *a, int x, int y,void**recv)
 	MPI_Get(*recv, a->objSize, MPI_CHAR, p.id, p.index, a->objSize, MPI_CHAR, a->win);
 }
 
+/*!
+  \fn void array1Fence(array1 *a)
+  \brief Wrapper over MPI_Win_fence.
+
+  NOTE: all put/get operations must be surrounded with *Fence functions!
+
+*/
 void array1Fence(array1 *a)
 {
 	assert(a);
 	MPI_Win_fence(0, a->win);	
 }
 
+/*!
+  \fn void array2Fence(array2 *a)
+  \brief Wrapper over MPI_Win_fence.
+
+  NOTE: all put/get operations must be surrounded with *Fence functions!
+
+*/
 void array2Fence(array2 *a)
 {
 	assert(a);
