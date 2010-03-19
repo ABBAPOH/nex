@@ -10,7 +10,7 @@
  */
 int fgrid2_native(int x, int y, fgrid2 *fg)
 {
-	assert((x<fg->h) && (y<fg->width) && (x>=0) && (y>=0));//?
+        assert((x<fg->height) && (y<fg->width) && (x>=0) && (y>=0));//?
 	return x*fg->width+y;
 }
 
@@ -80,7 +80,7 @@ void fgrid2FromRange(fgrid2 * g, MPI_Comm comm, int x, int y)
 	assert(x*y==numNodes);
 	
 	g->width=y;
-	g->h=x;
+        g->height=x;
 	
 	MPI_Comm_dup(comm, &(g->comm));
 	MPI_Comm_rank(g->comm, &(g->id));
@@ -132,7 +132,7 @@ void fgrid2Free(fgrid2 * g)
 	
 	g->id=-1;
 	g->x=g->y=-1;
-	g->width=g->h=-1;
+        g->width=g->height=-1;
 	
 	g->map=NULL;
 	g->reverse=NULL;
@@ -157,7 +157,7 @@ void fgrid2Slice(fgrid2 * g, fgrid2 * ng, int dim, int sliceIndex)
 	assert(g);
 	assert(ng);
 	assert((dim>=0)&&(dim<2));
-	assert((sliceIndex>=0) && ((dim==0) ? (sliceIndex < g->h) : (sliceIndex < g->width)));
+        assert((sliceIndex>=0) && ((dim==0) ? (sliceIndex < g->height) : (sliceIndex < g->width)));
 	
 	if(dim==0)
 	{
@@ -165,16 +165,16 @@ void fgrid2Slice(fgrid2 * g, fgrid2 * ng, int dim, int sliceIndex)
 		ng->width=g->width;
 		
 		if(g->x<sliceIndex)
-			ng->h=sliceIndex;//in first part
+                        ng->height=sliceIndex;//in first part
 		else
-			ng->h=g->h-sliceIndex;//in second part
+                        ng->height=g->height-sliceIndex;//in second part
 		
 		MPI_Comm_split(g->comm, g->x <sliceIndex, 0, &(ng->comm));
 	}
 	else
 	{
 		//slice on y
-		ng->h=g->h;
+                ng->height=g->height;
 		
 		if(g->y<sliceIndex)
 			ng->width=sliceIndex;//in first part
@@ -214,10 +214,10 @@ void fgrid2SliceLinear(fgrid2 * g, fgrid2 * ng, int xSlice, int ySlice)
 	assert(ng);
 	assert(xSlice>0);
 	assert(ySlice>0);
-	assert((g->h % xSlice) == 0);
+	assert((g->height % xSlice) == 0);
 	assert((g->width % ySlice) == 0);
 	
-	ng->h=xSlice;
+	ng->height=xSlice;
 	ng->width=ySlice;
 	int ww=g->width / ySlice;
 	
@@ -259,7 +259,7 @@ void fgrid2SliceParts(fgrid2 * g, fgrid2 * ng, int* xParts, int* yParts, int xSi
 	for(i=1;i<ySize;i++)
 		ySum[i]=yParts[i-1]+ySum[i-1];
 	
-	assert( ! (g->h - xSum[xSize-1] - xParts[xSize-1]) );
+	assert( ! (g->height - xSum[xSize-1] - xParts[xSize-1]) );
 	assert( ! (g->width - ySum[ySize-1] - yParts[ySize-1]) );
 	
 	free(xSum);

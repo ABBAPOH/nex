@@ -21,8 +21,7 @@ int fgrid3_native(int x, int y, int z, const fgrid3 *fg)
 {
 	assert((x<fg->h) && (y<fg->w) && (z<fg->l) && (x>=0) && (y>=0) && (x>=0));//?
 	//return z*fg->w*fg->h + x*fg->w+y;
-	return x*fg->w*fg->l + y*fg->l+z;
-	
+	return x*fg->w*fg->l + y*fg->l + z;
 }
 
 void fgrid3CreateXYLine(fgrid3 * g)
@@ -30,7 +29,7 @@ void fgrid3CreateXYLine(fgrid3 * g)
 	assert(g);
 	
 	MPI_Comm_split(g->comm, g->x*g->w + g->y, 0, &(g->xyLine));
-	MPI_Comm_rank(g->xyLine,&(g->xyLineSelf));
+	MPI_Comm_rank(g->xyLine, &(g->xyLineSelf));
 }
 
 void fgrid3CreateYZLine(fgrid3 * g)
@@ -38,7 +37,7 @@ void fgrid3CreateYZLine(fgrid3 * g)
 	assert(g);
 	
 	MPI_Comm_split(g->comm, g->y*g->l + g->z, 0, &(g->yzLine));
-	MPI_Comm_rank(g->yzLine,&(g->yzLineSelf));
+	MPI_Comm_rank(g->yzLine, &(g->yzLineSelf));
 }
 
 void fgrid3CreateXZLine(fgrid3 * g)
@@ -46,7 +45,7 @@ void fgrid3CreateXZLine(fgrid3 * g)
 	assert(g);
 	
 	MPI_Comm_split(g->comm, g->x*g->l + g->z, 0, &(g->xzLine));
-	MPI_Comm_rank(g->xzLine,&(g->xzLineSelf));
+	MPI_Comm_rank(g->xzLine, &(g->xzLineSelf));
 }
 
 void fgrid3CreateXSide(fgrid3 * g)
@@ -54,7 +53,7 @@ void fgrid3CreateXSide(fgrid3 * g)
 	assert(g);
 	
 	MPI_Comm_split(g->comm, g->x, 0, &(g->xSide));
-	MPI_Comm_rank(g->xSide,&(g->xSideSelf));
+	MPI_Comm_rank(g->xSide, &(g->xSideSelf));
 	
 }
 
@@ -63,7 +62,7 @@ void fgrid3CreateYSide(fgrid3 * g)
 	assert(g);
 	
 	MPI_Comm_split(g->comm, g->y, 0, &(g->ySide));
-	MPI_Comm_rank(g->ySide,&(g->ySideSelf));
+	MPI_Comm_rank(g->ySide, &(g->ySideSelf));
 }
 
 void fgrid3CreateZSide(fgrid3 * g)
@@ -71,15 +70,15 @@ void fgrid3CreateZSide(fgrid3 * g)
 	assert(g);
 	
 	MPI_Comm_split(g->comm, g->z, 0, &(g->zSide));
-	MPI_Comm_rank(g->zSide,&(g->zSideSelf));
+	MPI_Comm_rank(g->zSide, &(g->zSideSelf));
 }
 
-void fgrid3Slice(fgrid3 * g,fgrid3 * ng, int dim, int sliceIndex)
+void fgrid3Slice(fgrid3 * g, fgrid3 * ng, int dim, int sliceIndex)
 {
 	assert(g);
 	assert(ng);
-	assert((dim>=0)&&(dim<3));
-	assert(sliceIndex>=0);
+	assert((dim >= 0) && (dim < 3));
+	assert(sliceIndex >= 0);
 	switch (dim)
 	{
 		case 0: assert(sliceIndex < g->h); break;
@@ -92,53 +91,53 @@ void fgrid3Slice(fgrid3 * g,fgrid3 * ng, int dim, int sliceIndex)
 	{
 		case 0:{
 			//slice on x
-			ng->w=g->w;
-			ng->l=g->l;
+			ng->w = g->w;
+			ng->l = g->l;
 			
 			if(g->x<sliceIndex)
-				ng->h=sliceIndex;//in first part
+				ng->h = sliceIndex;//in first part
 			else
-				ng->h=g->h-sliceIndex;//in second part
+				ng->h = g->h-sliceIndex;//in second part
 			
 			MPI_Comm_split(g->comm, g->x <sliceIndex, 0, &(ng->comm));
-		}break;
+		} break;
 		
 		case 1:{
 			//slice on y
-			ng->h=g->h;
-			ng->l=g->l;
+			ng->h = g->h;
+			ng->l = g->l;
 			
 			if(g->y<sliceIndex)
-				ng->w=sliceIndex;//in first part
+				ng->w = sliceIndex;//in first part
 			else
-				ng->w=g->w-sliceIndex;//in second part
+				ng->w = g->w-sliceIndex;//in second part
 			
 			MPI_Comm_split(g->comm, g->y <sliceIndex, 0, &(ng->comm));
 		}break;
 		
 		case 2:{
 			//slice on y
-			ng->h=g->h;
-			ng->w=g->w;
+			ng->h = g->h;
+			ng->w = g->w;
 			
 			if(g->z<sliceIndex)
-				ng->l=sliceIndex;//in first part
+				ng->l = sliceIndex;//in first part
 			else
-				ng->l=g->l-sliceIndex;//in second part
+				ng->l = g->l-sliceIndex;//in second part
 			
 			MPI_Comm_split(g->comm, g->z <sliceIndex, 0, &(ng->comm));
 		}break;
 		
 	}
 	
-	MPI_Comm_rank(ng->comm,&(ng->id));
+	MPI_Comm_rank(ng->comm, &(ng->id));
 	
-	ng->topo.obj=g;
-	ng->topo.type=Tfgrid3;
+	ng->topo.obj = g;
+	ng->topo.type = Tfgrid3;
 	
-	ng->reverse=g->reverse;
+	ng->reverse = g->reverse;
 	ng->reverse(ng);
-	ng->map=g->map;
+	ng->map = g->map;
 	
 	//!!!!!!!!!!lines
 	fgrid3CreateXYLine(ng);
@@ -152,7 +151,7 @@ void fgrid3Slice(fgrid3 * g,fgrid3 * ng, int dim, int sliceIndex)
 	
 }
 
-void fgrid3SliceLinear(fgrid3 * g,fgrid3 * ng, int xSlice, int ySlice, int zSlice)
+void fgrid3SliceLinear(fgrid3 * g, fgrid3 * ng, int xSlice, int ySlice, int zSlice)
 {
 	assert(g);
 	assert(ng);
@@ -163,22 +162,22 @@ void fgrid3SliceLinear(fgrid3 * g,fgrid3 * ng, int xSlice, int ySlice, int zSlic
 	assert((g->w % ySlice) == 0);
 	assert((g->l % zSlice) == 0);
 	
-	ng->h=xSlice;
-	ng->w=ySlice;
-	ng->l=zSlice;
-	int ww=g->w / ySlice;
-	int ll=g->l / zSlice;
+	ng->h = xSlice;
+	ng->w = ySlice;
+	ng->l = zSlice;
+	int ww = g->w / ySlice;
+	int ll = g->l / zSlice;
 	
 	MPI_Comm_split(g->comm, (g->x / xSlice)*ww*ll + (g->y / ySlice)*ll + (g->z / zSlice), 0, &(ng->comm));
 	
-	MPI_Comm_rank(ng->comm,&(ng->id));
+	MPI_Comm_rank(ng->comm, &(ng->id));
 	
 	ng->topo.obj=g;
 	ng->topo.type=Tfgrid3;
 	
-	ng->reverse=g->reverse;
+	ng->reverse = g->reverse;
 	ng->reverse(ng);
-	ng->map=g->map;
+	ng->map = g->map;
 	
 	//!!!!!!!!!!lines
 	fgrid3CreateXYLine(ng);
@@ -197,21 +196,21 @@ void fgrid3FromRange(fgrid3 * g, MPI_Comm comm, int x, int y, int z)
 	
 	int numNodes;
 	MPI_Comm_size(comm,&numNodes);
-	assert(x*y*z==numNodes);
+	assert(x*y*z == numNodes);
 	
-	g->w=y;
-	g->h=x;
-	g->l=z;
+	g->w = y;
+	g->h = x;
+	g->l = z;
 	
 	MPI_Comm_dup(comm, &(g->comm));
-	MPI_Comm_rank(g->comm,&(g->id));
+	MPI_Comm_rank(g->comm, &(g->id));
 	
 	g->topo.obj=NULL;
 	g->topo.type=Tnone;
 	
 	g->reverse=(void(*)(fgrid3 *g)) (fgrid3_reverse);
 	g->reverse(g);
-	g->map=(int(*)(int,int,int,fgrid3 *)) (fgrid3_native);
+	g->map=(int(*)(int, int, int, fgrid3 *)) (fgrid3_native);
 	
 	fgrid3CreateXYLine(g);
 	fgrid3CreateYZLine(g);
@@ -229,8 +228,8 @@ void fgrid3FromNative(fgrid3 * g)
 	
 	fgrid3FromRange(g,MPI_COMM_WORLD,nativeX,nativeY,1);
 	
-	g->topo.obj=NULL;
-	g->topo.type=Tnone;
+	g->topo.obj = NULL;
+	g->topo.type = Tnone;
 }
 
 void fgrid3Barrier(fgrid3 * g)
@@ -258,15 +257,15 @@ void fgrid3Free(fgrid3 * g)
 	g->yzLineSelf=-1;
 	g->xzLineSelf=-1;
 	
-	g->id=-1;
-	g->x=g->y=g->z=-1;
-	g->w=g->h=g->l=-1;
+	g->id = -1;
+	g->x = g->y = g->z = -1;
+	g->w = g->h = g->l = -1;
 	
-	g->map=NULL;
-	g->reverse=NULL;
+	g->map = NULL;
+	g->reverse = NULL;
 	
-	g->topo.type=Tnone;
-	g->topo.obj=NULL;
+	g->topo.type = Tnone;
+	g->topo.obj = NULL;
 	
 	MPI_Comm_free(&(g->comm));
 	

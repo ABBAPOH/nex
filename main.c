@@ -69,7 +69,7 @@ void testfgrid2A(fgrid2 * fg2, fgrid2 * slfg2)
 	if(fg2->id==0)printf("\n\ntestfgrid2A\n\n");
 	MPI_Barrier(fg2->comm);
 	
-        printf("rank=%d | (%d,%d)[%d,%d] | (%d,%d)[%d,%d]\n",rank, fg2->x, fg2->y, fg2->h, fg2->width    , slfg2->x, slfg2->y, slfg2->h, slfg2->width);
+        printf("rank=%d | (%d,%d)[%d,%d] | (%d,%d)[%d,%d]\n",rank, fg2->x, fg2->y, fg2->height, fg2->width    , slfg2->x, slfg2->y, slfg2->height, slfg2->width);
 	
 	MPI_Barrier(fg2->comm);
 }
