@@ -8,7 +8,7 @@ typedef struct
 {
 	MPI_Comm comm; 
 	int id;
-	uint index;
+        unsigned index;
 	int bindex;
 } npointer;
 //win problem

@@ -10,7 +10,7 @@ typedef struct boxtemp
 { 
 	void* data;  
 	struct boxtemp* nextlvl;
-	uint index;
+        unsigned index;
 	short int levelSize;  
 	//short int numUsed;
 	unsigned char set;
@@ -20,26 +20,26 @@ typedef struct boxtemp
 typedef struct boxheadertemp
 {
 	BoxNode *box;
-	uint (*hash)(uint , int lvl); 
+        unsigned (*hash)(unsigned , int lvl);
 	void (*levelAlloc)(struct boxtemp* b,int lvl);
 	unsigned char maxLevel;
 	int dataSize;
 } BoxHeader;
 
-uint hash_native(uint index, int lvl);
+unsigned hash_native(unsigned index, int lvl);
 void levelAlloc_native(struct boxtemp* b,int lvl);
 
 void boxFromNative(BoxHeader *bh, int dataSize);
 void boxNodeNew(BoxNode *b, BoxHeader *bh);
 void boxFree(BoxHeader *bh);
 void boxNodeFree(BoxNode *b);
-void* boxNodeGet(BoxNode *b,uint index, BoxHeader *bh);
-void boxNodePut(BoxNode *b,uint index,void* data, BoxHeader *bh, unsigned char copyFlag);
-void* boxGet(BoxHeader *bh,uint index);
-void boxPut(BoxHeader *bh,uint index,void* data);
-void boxPutNoCopy(BoxHeader *bh,uint index,void* data);
+void* boxNodeGet(BoxNode *b,unsigned index, BoxHeader *bh);
+void boxNodePut(BoxNode *b,unsigned index,void* data, BoxHeader *bh, unsigned char copyFlag);
+void* boxGet(BoxHeader *bh,unsigned index);
+void boxPut(BoxHeader *bh,unsigned index,void* data);
+void boxPutNoCopy(BoxHeader *bh,unsigned index,void* data);
 
-void boxMapAll(BoxHeader *bh, void (*mapFunc)(void* obj, uint index, BoxHeader *bh));
-void boxMapSome(BoxHeader *bh, void (*mapFunc)(void* obj, uint index, BoxHeader *bh), int (*ifFunc)(uint index));
+void boxMapAll(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh));
+void boxMapSome(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh), int (*ifFunc)(unsigned index));
 
 #endif

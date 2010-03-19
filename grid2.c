@@ -54,8 +54,8 @@ void grid2Fromfgrid2(grid2 * g, fgrid2 * fg)
 	
 	g->up=fg->map( (g->x+fg->h-1)%fg->h , g->y , fg);
 	g->down=fg->map( (g->x+1)%fg->h , g->y , fg);
-	g->left=fg->map( g->x , (g->y+fg->w-1)%fg->w , fg);
-	g->right=fg->map( g->x , (g->y+1)%fg->w , fg);
+        g->left=fg->map( g->x , (g->y+fg->width-1)%fg->width , fg);
+        g->right=fg->map( g->x , (g->y+1)%fg->width , fg);
 	
 	MPI_Group ogroup;
 	MPI_Group ngroup;

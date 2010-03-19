@@ -10,8 +10,8 @@
  */
 int fgrid2_native(int x, int y, fgrid2 *fg)
 {
-	assert((x<fg->h) && (y<fg->w) && (x>=0) && (y>=0));//?
-	return x*fg->w+y;
+	assert((x<fg->h) && (y<fg->width) && (x>=0) && (y>=0));//?
+	return x*fg->width+y;
 }
 
 
@@ -27,8 +27,8 @@ void fgrid2_reverse(fgrid2 *g)
 {
 	assert(g);
 	
-	g->x = (int)(g->id / g->w);
-	g->y = g->id % g->w;
+	g->x = (int)(g->id / g->width);
+	g->y = g->id % g->width;
 }
 
 /*!
@@ -79,7 +79,7 @@ void fgrid2FromRange(fgrid2 * g, MPI_Comm comm, int x, int y)
 	MPI_Comm_size(comm,&numNodes);
 	assert(x*y==numNodes);
 	
-	g->w=y;
+	g->width=y;
 	g->h=x;
 	
 	MPI_Comm_dup(comm, &(g->comm));
@@ -132,7 +132,7 @@ void fgrid2Free(fgrid2 * g)
 	
 	g->id=-1;
 	g->x=g->y=-1;
-	g->w=g->h=-1;
+	g->width=g->h=-1;
 	
 	g->map=NULL;
 	g->reverse=NULL;
@@ -157,12 +157,12 @@ void fgrid2Slice(fgrid2 * g, fgrid2 * ng, int dim, int sliceIndex)
 	assert(g);
 	assert(ng);
 	assert((dim>=0)&&(dim<2));
-	assert((sliceIndex>=0) && ((dim==0) ? (sliceIndex < g->h) : (sliceIndex < g->w)));
+	assert((sliceIndex>=0) && ((dim==0) ? (sliceIndex < g->h) : (sliceIndex < g->width)));
 	
 	if(dim==0)
 	{
 		//slice on x
-		ng->w=g->w;
+		ng->width=g->width;
 		
 		if(g->x<sliceIndex)
 			ng->h=sliceIndex;//in first part
@@ -177,9 +177,9 @@ void fgrid2Slice(fgrid2 * g, fgrid2 * ng, int dim, int sliceIndex)
 		ng->h=g->h;
 		
 		if(g->y<sliceIndex)
-			ng->w=sliceIndex;//in first part
+			ng->width=sliceIndex;//in first part
 		else
-			ng->w=g->w-sliceIndex;//in second part
+			ng->width=g->width-sliceIndex;//in second part
 		
 		MPI_Comm_split(g->comm, g->y <sliceIndex, 0, &(ng->comm));
 	}
@@ -215,11 +215,11 @@ void fgrid2SliceLinear(fgrid2 * g, fgrid2 * ng, int xSlice, int ySlice)
 	assert(xSlice>0);
 	assert(ySlice>0);
 	assert((g->h % xSlice) == 0);
-	assert((g->w % ySlice) == 0);
+	assert((g->width % ySlice) == 0);
 	
 	ng->h=xSlice;
-	ng->w=ySlice;
-	int ww=g->w / ySlice;
+	ng->width=ySlice;
+	int ww=g->width / ySlice;
 	
 	MPI_Comm_split(g->comm, (g->x / xSlice)*ww + (g->y / ySlice), 0, &(ng->comm));
 	
@@ -260,7 +260,7 @@ void fgrid2SliceParts(fgrid2 * g, fgrid2 * ng, int* xParts, int* yParts, int xSi
 		ySum[i]=yParts[i-1]+ySum[i-1];
 	
 	assert( ! (g->h - xSum[xSize-1] - xParts[xSize-1]) );
-	assert( ! (g->w - ySum[ySize-1] - yParts[ySize-1]) );
+	assert( ! (g->width - ySum[ySize-1] - yParts[ySize-1]) );
 	
 	free(xSum);
 	free(ySum);

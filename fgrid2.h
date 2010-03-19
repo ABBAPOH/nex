@@ -10,7 +10,7 @@ typedef struct fgrid2temp
 	int id;
 	MPI_Comm comm;
 	int x,y;
-	int w,h;
+        int width,h;
 	MPI_Comm xLine;
 	MPI_Comm yLine;
 	int xLineSelf,yLineSelf;

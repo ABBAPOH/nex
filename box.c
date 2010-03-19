@@ -1,6 +1,6 @@
 #include "box.h"
 
-uint hash_native(uint index, int lvl)
+unsigned hash_native(unsigned index, int lvl)
 {
 	return (index>>(8*(lvl-1))   )&255;
 }
@@ -68,13 +68,13 @@ void boxNodeFree(BoxNode *b)
 	b->index=-1;
 	b->level=-1;
 	
-	if(b->data != NULL)
+        if (b->data != NULL)
 	{
 		MPI_Free_mem(b->data);
 		b->data=NULL;
 	}
 	
-	if(b->nextlvl != NULL)
+        if (b->nextlvl != NULL)
 	{
 		int i;
 		for(i=0;i<b->levelSize;i++)
@@ -86,7 +86,7 @@ void boxNodeFree(BoxNode *b)
 	}
 }
 
-void *boxNodeGet(BoxNode *b, uint index, BoxHeader *bh)
+void *boxNodeGet(BoxNode *b, unsigned index, BoxHeader *bh)
 {
 	assert(b);
 	assert(bh);
@@ -103,7 +103,7 @@ void *boxNodeGet(BoxNode *b, uint index, BoxHeader *bh)
 	return boxNodeGet(  &(b->nextlvl[bh->hash(index,b->level)]) , index,bh);
 }
 
-void boxNodePut(BoxNode *b, uint index, void* data, BoxHeader *bh, unsigned char copyFlag)
+void boxNodePut(BoxNode *b, unsigned index, void* data, BoxHeader *bh, unsigned char copyFlag)
 {
 	assert(b);
 	assert(bh);
@@ -142,14 +142,14 @@ void boxNodePut(BoxNode *b, uint index, void* data, BoxHeader *bh, unsigned char
 	
 }
 
-void* boxGet(BoxHeader *bh,uint index)
+void* boxGet(BoxHeader *bh,unsigned index)
 {
 	assert(bh);
 	
 	return boxNodeGet(bh->box, index, bh);
 }
 
-void boxPut(BoxHeader *bh,uint index,void* data)
+void boxPut(BoxHeader *bh,unsigned index,void* data)
 {
 	assert(bh);
 	assert(data);
@@ -157,7 +157,7 @@ void boxPut(BoxHeader *bh,uint index,void* data)
 	boxNodePut(bh->box, index, data, bh, 1);
 }
 
-void boxPutNoCopy(BoxHeader *bh,uint index,void* data)
+void boxPutNoCopy(BoxHeader *bh,unsigned index,void* data)
 {
 	assert(bh);
 	assert(data);
@@ -165,7 +165,7 @@ void boxPutNoCopy(BoxHeader *bh,uint index,void* data)
 	boxNodePut(bh->box, index, data, bh, 0);
 }
 
-void boxMapRec(BoxHeader *bh, BoxNode *b, void (*mapFunc)(void* obj, uint index, BoxHeader *bh), int (*ifFunc)(uint index))
+void boxMapRec(BoxHeader *bh, BoxNode *b, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh), int (*ifFunc)(unsigned index))
 {
 	//private
 	assert(bh);
@@ -187,7 +187,7 @@ void boxMapRec(BoxHeader *bh, BoxNode *b, void (*mapFunc)(void* obj, uint index,
 	return;
 }
 
-void boxMapAll(BoxHeader *bh, void (*mapFunc)(void* obj, uint index, BoxHeader *bh))
+void boxMapAll(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh))
 {
 	assert(bh);
 	assert(mapFunc);
@@ -195,7 +195,7 @@ void boxMapAll(BoxHeader *bh, void (*mapFunc)(void* obj, uint index, BoxHeader *
 	boxMapRec(bh, bh->box, mapFunc, NULL);
 }
 
-void boxMapSome(BoxHeader *bh, void (*mapFunc)(void* obj, uint index, BoxHeader *bh), int (*ifFunc)(uint index))
+void boxMapSome(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh), int (*ifFunc)(unsigned index))
 {
 	assert(bh);
 	assert(mapFunc);
