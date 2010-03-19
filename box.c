@@ -1,19 +1,33 @@
 #include "box.h"
 
+/*!
+  \fn unsigned hash_native(unsigned index, int lvl)
+  \brief Native hash-function.
+
+*/
 unsigned hash_native(unsigned index, int lvl)
 {
 	return (index>>(8*(lvl-1))   )&255;
 }
 
-void levelAlloc_native(struct boxtemp* b,int lvl)
+/*!
+  \fn void levelAlloc_native(struct boxtemp* b, int lvl)
+  \brief Returns box level size.
+
+*/
+void levelAlloc_native(struct boxtemp* b, int lvl)
 {
 	assert(b);
 	
 	b->levelSize=256;
-	
 }
 
-void boxFromNative(BoxHeader *bh,int dataSize)
+/*!
+  \fn void boxFromNative(BoxHeader *bh, int dataSize)
+  \brief Creates native container with element size \a dataSize.
+
+*/
+void boxFromNative(BoxHeader *bh, int dataSize)
 {
 	assert(bh);
 	assert(dataSize>0);
@@ -29,6 +43,11 @@ void boxFromNative(BoxHeader *bh,int dataSize)
 	assert(bh->box->level  <=  bh->maxLevel);
 }
 
+/*!
+  \fn void boxNodeNew(BoxNode *b, BoxHeader *bh)
+  \brief Inner function. Fills node \a b with defaut values.
+
+*/
 void boxNodeNew(BoxNode *b, BoxHeader *bh)
 {
 	assert(b);
@@ -46,6 +65,11 @@ void boxNodeNew(BoxNode *b, BoxHeader *bh)
 	
 }
 
+/*!
+  \fn void boxFree(BoxHeader *bh)
+  \brief Frees box \a bh.
+
+*/
 void boxFree(BoxHeader *bh)
 {
 	assert(bh);
@@ -59,6 +83,13 @@ void boxFree(BoxHeader *bh)
 	MPI_Free_mem(bh->box);
 }
 
+/*!
+  \fn void boxNodeFree(BoxNode *b)
+  \brief Inner function. Recursively frees nodes.
+
+  Used in boxFree.
+
+*/
 void boxNodeFree(BoxNode *b)
 {
 	assert(b);
@@ -86,6 +117,13 @@ void boxNodeFree(BoxNode *b)
 	}
 }
 
+/*!
+  \fn void *boxNodeGet(BoxNode *b, unsigned index, BoxHeader *bh)
+  \brief Inner function. Resursively searches element index.
+  \param b Node to start with
+  \param index Index to search
+  \param bh Box Header
+*/
 void *boxNodeGet(BoxNode *b, unsigned index, BoxHeader *bh)
 {
 	assert(b);
@@ -103,6 +141,17 @@ void *boxNodeGet(BoxNode *b, unsigned index, BoxHeader *bh)
 	return boxNodeGet(  &(b->nextlvl[bh->hash(index,b->level)]) , index,bh);
 }
 
+/*!
+  \fn void boxNodePut(BoxNode *b, unsigned index, void* data, BoxHeader *bh, unsigned char copyFlag)
+  \brief Inner function. Inserts \a data by index \a index
+  \param b Node to start with
+  \param index Index to insert
+  \param data Data to insert
+  \param bh Box Header
+  \param copyFlag If true, copy of data is stored, otherwise - pointer to it
+
+  Allocates memory for cells if necessary
+*/
 void boxNodePut(BoxNode *b, unsigned index, void* data, BoxHeader *bh, unsigned char copyFlag)
 {
 	assert(b);
@@ -142,14 +191,24 @@ void boxNodePut(BoxNode *b, unsigned index, void* data, BoxHeader *bh, unsigned 
 	
 }
 
-void* boxGet(BoxHeader *bh,unsigned index)
+/*!
+  \fn void* boxGet(BoxHeader *bh, unsigned index)
+  \brief Gets element by \a index
+
+*/
+void* boxGet(BoxHeader *bh, unsigned index)
 {
 	assert(bh);
 	
 	return boxNodeGet(bh->box, index, bh);
 }
 
-void boxPut(BoxHeader *bh,unsigned index,void* data)
+/*!
+  \fn void boxPut(BoxHeader *bh, unsigned index, void* data)
+  \brief Inserts \a data by \a index
+
+*/
+void boxPut(BoxHeader *bh, unsigned index, void* data)
 {
 	assert(bh);
 	assert(data);
@@ -157,7 +216,12 @@ void boxPut(BoxHeader *bh,unsigned index,void* data)
 	boxNodePut(bh->box, index, data, bh, 1);
 }
 
-void boxPutNoCopy(BoxHeader *bh,unsigned index,void* data)
+/*!
+  \fn void boxPutNoCopy(BoxHeader *bh, unsigned index, void* data)
+  \brief Inserts \a pointer to data (not a copy) by \a index.
+
+*/
+void boxPutNoCopy(BoxHeader *bh, unsigned index, void* data)
 {
 	assert(bh);
 	assert(data);
@@ -165,6 +229,13 @@ void boxPutNoCopy(BoxHeader *bh,unsigned index,void* data)
 	boxNodePut(bh->box, index, data, bh, 0);
 }
 
+/*!
+  \fn void boxMapRec(BoxHeader *bh, BoxNode *b, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh), int (*ifFunc)(unsigned index))
+  \brief Inner Function. Realization of boxMap*.
+
+  If \a ifFunc == 0, all works with all nodes, otherwise selects them using \a IfFunc
+
+*/
 void boxMapRec(BoxHeader *bh, BoxNode *b, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh), int (*ifFunc)(unsigned index))
 {
 	//private
@@ -187,6 +258,11 @@ void boxMapRec(BoxHeader *bh, BoxNode *b, void (*mapFunc)(void* obj, unsigned in
 	return;
 }
 
+/*!
+  \fn void boxMapAll(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh))
+  \brief Applies \a mapFunc to all data in box \a bh.
+
+*/
 void boxMapAll(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh))
 {
 	assert(bh);
@@ -195,6 +271,11 @@ void boxMapAll(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHead
 	boxMapRec(bh, bh->box, mapFunc, NULL);
 }
 
+/*!
+  \fn void boxMapSome(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh), int (*ifFunc)(unsigned index))
+  \brief Applies \a mapFunc to data in box \a bh only if \a ifFunc returns 1 being applied to that \a index.
+
+*/
 void boxMapSome(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh), int (*ifFunc)(unsigned index))
 {
 	assert(bh);
