@@ -1,5 +1,13 @@
 #include "grid2.h"
 
+
+/**
+    \fn void grid2FromNative(grid2 * g)
+    \brief Creates two-dimensional grid using native x/y (close to hardware)
+
+    Заполняет поля структуры grid2 \a g. Знает свои координаты и координаты соседей.
+    Также создает группу для рассылки по всем соседям.
+*/
 void grid2FromNative(grid2 * g)
 {
 	assert(g);
@@ -26,7 +34,15 @@ void grid2FromNative(grid2 * g)
 	g->topo.type=Tnone;
 }
 
-void grid2Fromfgrid2(grid2 * g,fgrid2 * fg)
+/**
+    \fn void grid2Fromfgrid2(grid2 * g,fgrid2 * fg)
+    \brief Creates two-dimensional grid using existed topology in \a fg
+
+    Заполняет поля структуры \a g, но, в отличие от grid2FromNative, использует параметры сетки, указанные в \a fg.
+    Знает свои координаты и координаты соседей. Также создает группу для рассылки по всем соседям.
+
+*/
+void grid2Fromfgrid2(grid2 * g, fgrid2 * fg)
 {
 	assert(g);
 	assert(fg);
@@ -53,6 +69,13 @@ void grid2Fromfgrid2(grid2 * g,fgrid2 * fg)
 	g->topo.type=Tfgrid2;
 }
 
+/**
+    \fn void grid2Free(grid2 * g)
+    \brief Frees \a structure
+
+    Очищает поля структуры \a g, заполняя поля значением -1,
+    так чтобы можно было легко отследить использование ощиченной структур
+*/
 void grid2Free(grid2 * g)
 {
 	assert(g);
