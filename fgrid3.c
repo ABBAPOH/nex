@@ -19,7 +19,7 @@ void fgrid3CreateXYLine(fgrid3 * g)
 {
 	assert(g);
 	
-	MPI_Comm_split(g->comm, g->x*g->w + g->y, 0, &(g->xyLine));
+	MPI_Comm_split(g->comm, g->x*g->width + g->y, 0, &(g->xyLine));
 	MPI_Comm_rank(g->xyLine, &(g->xyLineSelf));
 }
 
@@ -33,7 +33,7 @@ void fgrid3CreateYZLine(fgrid3 * g)
 {
 	assert(g);
 	
-	MPI_Comm_split(g->comm, g->y*g->l + g->z, 0, &(g->yzLine));
+	MPI_Comm_split(g->comm, g->y*g->length + g->z, 0, &(g->yzLine));
 	MPI_Comm_rank(g->yzLine, &(g->yzLineSelf));
 }
 
@@ -47,7 +47,7 @@ void fgrid3CreateXZLine(fgrid3 * g)
 {
 	assert(g);
 	
-	MPI_Comm_split(g->comm, g->x*g->l + g->z, 0, &(g->xzLine));
+	MPI_Comm_split(g->comm, g->x*g->length + g->z, 0, &(g->xzLine));
 	MPI_Comm_rank(g->xzLine, &(g->xzLineSelf));
 }
 
@@ -104,9 +104,9 @@ void fgrid3CreateZSide(fgrid3 * g)
 void fgrid3_reverse(fgrid3 *g)
 {
 	assert(g);
-	g->x = (g->id) / (g->w * g->l);
-	g->y = (g->id / g->l) % g->w;
-	g->z = (g->id) % (g->w * g->l) % (g->l);
+	g->x = (g->id) / (g->width * g->length);
+	g->y = (g->id / g->length) % g->width;
+	g->z = (g->id) % (g->width * g->length) % (g->length);
 }
 
 /*!
@@ -117,9 +117,9 @@ void fgrid3_reverse(fgrid3 *g)
 */
 int fgrid3_native(int x, int y, int z, fgrid3 *fg)
 {
-	assert((x<fg->h) && (y<fg->w) && (z<fg->l) && (x>=0) && (y>=0) && (x>=0));//?
+	assert((x<fg->height) && (y<fg->width) && (z<fg->length) && (x>=0) && (y>=0) && (x>=0));//?
 	//return z*fg->w*fg->h + x*fg->w+y;
-	return x*fg->w*fg->l + y*fg->l + z;
+	return x*fg->width*fg->length + y*fg->length + z;
 }
 
 /*!
@@ -141,9 +141,9 @@ void fgrid3FromRange(fgrid3 * g, MPI_Comm comm, int x, int y, int z)
 	MPI_Comm_size(comm,&numNodes);
 	assert(x*y*z == numNodes);
 
-	g->w = y;
-	g->h = x;
-	g->l = z;
+	g->width = y;
+	g->height = x;
+	g->length = z;
 
 	MPI_Comm_dup(comm, &(g->comm));
 	MPI_Comm_rank(g->comm, &(g->id));
@@ -199,9 +199,9 @@ void fgrid3Slice(fgrid3 * g, fgrid3 * ng, int dim, int sliceIndex)
 	assert(sliceIndex >= 0);
 	switch (dim)
 	{
-		case 0: assert(sliceIndex < g->h); break;
-		case 1: assert(sliceIndex < g->w); break;
-		case 2: assert(sliceIndex < g->l); break;
+		case 0: assert(sliceIndex < g->height); break;
+		case 1: assert(sliceIndex < g->width); break;
+		case 2: assert(sliceIndex < g->length); break;
 		default: assert(0);
 	}
 	
@@ -209,39 +209,39 @@ void fgrid3Slice(fgrid3 * g, fgrid3 * ng, int dim, int sliceIndex)
 	{
 		case 0:{
 			//slice on x
-			ng->w = g->w;
-			ng->l = g->l;
+			ng->width = g->width;
+			ng->length = g->length;
 			
 			if(g->x<sliceIndex)
-				ng->h = sliceIndex;//in first part
+				ng->height = sliceIndex;//in first part
 			else
-				ng->h = g->h-sliceIndex;//in second part
+				ng->height = g->height-sliceIndex;//in second part
 			
 			MPI_Comm_split(g->comm, g->x <sliceIndex, 0, &(ng->comm));
 		} break;
 		
 		case 1:{
 			//slice on y
-			ng->h = g->h;
-			ng->l = g->l;
+			ng->height = g->height;
+			ng->length = g->length;
 			
 			if(g->y<sliceIndex)
-				ng->w = sliceIndex;//in first part
+				ng->width = sliceIndex;//in first part
 			else
-				ng->w = g->w-sliceIndex;//in second part
+				ng->width = g->width-sliceIndex;//in second part
 			
 			MPI_Comm_split(g->comm, g->y <sliceIndex, 0, &(ng->comm));
 		} break;
 		
 		case 2:{
 			//slice on y
-			ng->h = g->h;
-			ng->w = g->w;
+			ng->height = g->height;
+			ng->width = g->width;
 			
 			if(g->z<sliceIndex)
-				ng->l = sliceIndex;//in first part
+				ng->length = sliceIndex;//in first part
 			else
-				ng->l = g->l-sliceIndex;//in second part
+				ng->length = g->length-sliceIndex;//in second part
 			
 			MPI_Comm_split(g->comm, g->z <sliceIndex, 0, &(ng->comm));
 		}break;
@@ -282,15 +282,15 @@ void fgrid3SliceLinear(fgrid3 * g, fgrid3 * ng, int xSlice, int ySlice, int zSli
 	assert(xSlice>0);
 	assert(ySlice>0);
 	assert(zSlice>0);
-	assert((g->h % xSlice) == 0);
-	assert((g->w % ySlice) == 0);
-	assert((g->l % zSlice) == 0);
+	assert((g->height % xSlice) == 0);
+	assert((g->width % ySlice) == 0);
+	assert((g->length % zSlice) == 0);
 	
-	ng->h = xSlice;
-	ng->w = ySlice;
-	ng->l = zSlice;
-	int ww = g->w / ySlice;
-	int ll = g->l / zSlice;
+	ng->height = xSlice;
+	ng->width = ySlice;
+	ng->length = zSlice;
+	int ww = g->width / ySlice;
+	int ll = g->length / zSlice;
 	
 	MPI_Comm_split(g->comm, (g->x / xSlice)*ww*ll + (g->y / ySlice)*ll + (g->z / zSlice), 0, &(ng->comm));
 	
@@ -352,7 +352,7 @@ void fgrid3Free(fgrid3 * g)
 	
 	g->id = -1;
 	g->x = g->y = g->z = -1;
-	g->w = g->h = g->l = -1;
+	g->width = g->height = g->length = -1;
 	
 	g->map = NULL;
 	g->reverse = NULL;

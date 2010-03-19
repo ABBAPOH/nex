@@ -203,15 +203,15 @@ void testfgrid3A()
 {
 	int i;
 	fgrid3 grid;
-	grid.h = 3;
-	grid.w = 4;
-	grid.l = 2;
+	grid.height = 3;
+	grid.width = 4;
+	grid.length = 2;
 	
 	if(!rank)printf("\n\ntestfgrid3A\n\n");
 	MPI_Barrier(MPI_COMM_WORLD);
 	
 	if(!rank)
-		for(i=0;i<grid.w*grid.h*grid.l;i++)
+		for(i=0;i<grid.width*grid.height*grid.length;i++)
 	{
 		grid.id = i;
 		fgrid3_reverse(&grid);
@@ -249,7 +249,7 @@ void testfgrid3C(fgrid3 * fg3, fgrid3 * slfg3)
 	if(fg3->id==0)printf("\n\ntestfgrid3C\n\n");
 	MPI_Barrier(fg3->comm);
 	
-	printf("rank=%d  |  (%d,%d,%d)[%d,%d,%d]  |  (%d,%d,%d)[%d,%d,%d]\n",rank, fg3->x, fg3->y, fg3->z, fg3->h, fg3->w, fg3->l    , slfg3->x, slfg3->y, slfg3->z, slfg3->h, slfg3->w, slfg3->l);
+	printf("rank=%d  |  (%d,%d,%d)[%d,%d,%d]  |  (%d,%d,%d)[%d,%d,%d]\n",rank, fg3->x, fg3->y, fg3->z, fg3->height, fg3->width, fg3->length    , slfg3->x, slfg3->y, slfg3->z, slfg3->height, slfg3->width, slfg3->length);
 	
 	MPI_Barrier(fg3->comm);
 }

@@ -18,8 +18,8 @@ typedef struct fgrid3temp
 	void(*reverse)(struct fgrid3temp *g);
 	int id;
 	MPI_Comm comm;
-	int x,y,z;
-	int w,h,l;
+	int x, y, z;
+	int width, height, length;
 	
 	MPI_Comm xSide;
 	MPI_Comm ySide;
