@@ -381,6 +381,8 @@ void testboxB()
 	
 	boxFromNative(&b,sizeof(int));
 	
+	test=778;
+	boxPut(&b,256 + 25,&test);
 	test=777;
 	boxPut(&b,256 + 25,&test);
 	test=999;

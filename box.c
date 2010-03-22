@@ -37,7 +37,8 @@ void boxFromNative(BoxHeader *bh, int dataSize)
 	bh->levelAlloc=levelAlloc_native;
 	bh->maxLevel=4;//depends on native
 	
-	MPI_Alloc_mem( sizeof(BoxNode), MPI_INFO_NULL, &(bh->box) );
+	//MPI_Alloc_mem( sizeof(BoxNode), MPI_INFO_NULL, &(bh->box) );
+	bh->box=malloc(sizeof(BoxNode));
 	boxNodeNew(bh->box,bh);
 	
 	assert(bh->box->level  <=  bh->maxLevel);
@@ -80,7 +81,8 @@ void boxFree(BoxHeader *bh)
 	bh->dataSize=-1;
 	
 	boxNodeFree(bh->box);
-	MPI_Free_mem(bh->box);
+	//MPI_Free_mem(bh->box);
+	free(bh->box);
 }
 
 /*!
@@ -162,15 +164,34 @@ void boxNodePut(BoxNode *b, unsigned index, void* data, BoxHeader *bh, unsigned 
 	{
 		if(copyFlag)
 		{
-			MPI_Alloc_mem( bh->dataSize, MPI_INFO_NULL, &(b->data) );
+			if(b->data==NULL)
+				MPI_Alloc_mem( bh->dataSize, MPI_INFO_NULL, &(b->data) );
 			memcpy(b->data,data, bh->dataSize);
 		}
 		else
 		{
+			if(b->data!=NULL)
+				MPI_Free_mem(b->data);
 			b->data=data;
 		}
 		b->set=1;
 		b->index=index;
+		return;
+	}
+	
+	//if(b->set==1)//always true
+	if(b->index==index)
+	{
+		if(copyFlag)
+		{
+			memcpy(b->data,data, bh->dataSize);
+		}
+		else
+		{
+			if(b->data!=NULL)
+				MPI_Free_mem(b->data);
+			b->data=data;
+		}
 		return;
 	}
 	
