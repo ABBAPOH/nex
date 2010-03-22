@@ -11,9 +11,7 @@ typedef struct boxtemp
 	void* data;  
 	struct boxtemp* nextlvl;
         unsigned index;
-	short int levelSize;  
-	//short int numUsed;
-	unsigned char set;
+	unsigned short int levelSize;  
 	unsigned char level;
 } BoxNode;
 

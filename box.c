@@ -37,7 +37,6 @@ void boxFromNative(BoxHeader *bh, int dataSize)
 	bh->levelAlloc=levelAlloc_native;
 	bh->maxLevel=4;//depends on native
 	
-	//MPI_Alloc_mem( sizeof(BoxNode), MPI_INFO_NULL, &(bh->box) );
 	bh->box=malloc(sizeof(BoxNode));
 	boxNodeNew(bh->box,bh);
 	
@@ -56,8 +55,6 @@ void boxNodeNew(BoxNode *b, BoxHeader *bh)
 	
 	b->index=-1;
 	b->level=1;
-	b->set=0;
-	//b->numUsed=0;
 	
 	b->data=NULL;
 	b->nextlvl=NULL;
@@ -81,7 +78,6 @@ void boxFree(BoxHeader *bh)
 	bh->dataSize=-1;
 	
 	boxNodeFree(bh->box);
-	//MPI_Free_mem(bh->box);
 	free(bh->box);
 }
 
@@ -96,8 +92,6 @@ void boxNodeFree(BoxNode *b)
 {
 	assert(b);
 	
-	//b->numUsed=-1;
-	b->set=0;
 	b->index=-1;
 	b->level=-1;
 	
@@ -112,7 +106,6 @@ void boxNodeFree(BoxNode *b)
 		int i;
 		for(i=0;i<b->levelSize;i++)
 			boxNodeFree(   &((b->nextlvl)[i])  );
-		//MPI_Free_mem(b->nextlvl);
 		free(b->nextlvl);
 		b->nextlvl=NULL;
 		b->levelSize=-1;
@@ -131,10 +124,7 @@ void *boxNodeGet(BoxNode *b, unsigned index, BoxHeader *bh)
 	assert(b);
 	assert(bh);
 	
-	//if(!(b->set))
-	//	return NULL;
-	
-	if((b->set) && (index==b->index))
+	if((b->data!=NULL) && (index==b->index))
 		return b->data;
 	
 	if(b->nextlvl==NULL)
@@ -160,26 +150,22 @@ void boxNodePut(BoxNode *b, unsigned index, void* data, BoxHeader *bh, unsigned 
 	assert(bh);
 	assert(data);
 	
-	if(b->set==0)
+	if(b->data==NULL)
 	{
 		if(copyFlag)
 		{
-			if(b->data==NULL)
-				MPI_Alloc_mem( bh->dataSize, MPI_INFO_NULL, &(b->data) );
+			MPI_Alloc_mem( bh->dataSize, MPI_INFO_NULL, &(b->data) );
 			memcpy(b->data,data, bh->dataSize);
 		}
 		else
 		{
-			if(b->data!=NULL)
-				MPI_Free_mem(b->data);
 			b->data=data;
 		}
-		b->set=1;
 		b->index=index;
 		return;
 	}
 	
-	//if(b->set==1)//always true
+	//overwrite
 	if(b->index==index)
 	{
 		if(copyFlag)
@@ -188,8 +174,7 @@ void boxNodePut(BoxNode *b, unsigned index, void* data, BoxHeader *bh, unsigned 
 		}
 		else
 		{
-			if(b->data!=NULL)
-				MPI_Free_mem(b->data);
+			MPI_Free_mem(b->data);
 			b->data=data;
 		}
 		return;
@@ -217,10 +202,9 @@ void boxNodeDel(BoxNode *b, unsigned index, BoxHeader *bh)
 	assert(b);
 	assert(bh);
 	
-	if((b->set) && (index==b->index))
+	if((b->data!=NULL) && (index==b->index))
 	{
 		b->index=-1;
-		b->set=0;
 		MPI_Free_mem(b->data);
 		b->data=NULL;
 		return;
@@ -289,7 +273,7 @@ void boxMapRec(BoxHeader *bh, BoxNode *b, void (*mapFunc)(void* obj, unsigned in
 	assert(b);
 	assert(mapFunc);
 	
-	if((b->set) && ( (ifFunc==NULL)  ||  (ifFunc(b->index)) ))
+	if((b->data!=NULL) && ( (ifFunc==NULL)  ||  (ifFunc(b->index)) ))
 	{
 		mapFunc(b->data, b->index, bh);
 	}

@@ -374,7 +374,7 @@ void testboxB()
 {
 	BoxHeader b;
 	
-	if(!rank)printf("\n\ntestboxB\n\n");
+	if(!rank)printf("\n\ntestboxB\n\nSize of BoxNode = %d\n",sizeof(BoxNode));
 	MPI_Barrier(MPI_COMM_WORLD);
 	
 	int test;
