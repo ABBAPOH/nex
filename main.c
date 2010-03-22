@@ -440,7 +440,7 @@ int main(int argc, char **argv)
 	fgrid3Slice(&fg3,&slfg3, 2, 1);
 	fgrid2SliceLinear(&fg,&sllfg, 1, 2);
 	fgrid3SliceLinear(&fg3,&sllfg3, 2, 1, 2);
-	fgrid2SliceParts(&fg,&sllfg, xParts, yParts, 1, 3);
+	fgrid2SliceParts(&fg,&slpfg, xParts, yParts, 1, 3);
 	
 	grid2Fromfgrid2(&g,&fg);
 	ntreeFromNative(&t);
@@ -471,6 +471,8 @@ int main(int argc, char **argv)
 	
 	testntreeA(&t3);
 	testfgrid2A(&fg, &sllfg);
+	testfgrid2A(&fg, &slpfg);
+	
 	testfgrid3B(&fg3);
 	testfgrid3C(&fg3, &slfg3);
 	testfgrid3C(&fg3, &sllfg3);
@@ -496,6 +498,7 @@ int main(int argc, char **argv)
 	fgrid2Free(&fg);
 	fgrid2Free(&slfg);
 	fgrid2Free(&sllfg);
+	fgrid2Free(&slpfg);
 	
 	fgrid3Free(&fg3);
 	fgrid3Free(&slfg3);

@@ -252,6 +252,9 @@ void fgrid2SliceParts(fgrid2 * g, fgrid2 * ng, int* xParts, int* yParts, int xSi
 	int i;
 	int* xSum=malloc(sizeof(int) * xSize);
 	int* ySum=malloc(sizeof(int) * ySize);
+	int xColor=xSize-1;
+	int yColor=ySize-1;
+	int resultColor=0;
 	
 	xSum[0]=0;
 	ySum[0]=0;
@@ -261,8 +264,41 @@ void fgrid2SliceParts(fgrid2 * g, fgrid2 * ng, int* xParts, int* yParts, int xSi
 	for(i=1;i<ySize;i++)
 		ySum[i]=yParts[i-1]+ySum[i-1];
 	
-	assert( ! (g->height - xSum[xSize-1] - xParts[xSize-1]) );
-	assert( ! (g->width - ySum[ySize-1] - yParts[ySize-1]) );
+	for(i=1;i<xSize;i++)
+		if(xSum[i]>g->x)
+		{
+			xColor=i-1;
+			break;
+		}
+	for(i=1;i<ySize;i++)
+		if(ySum[i]>g->y)
+		{
+			yColor=i-1;
+			break;
+		}
+	
+	resultColor=xColor*xSize + yColor;
+	printf("Parts (%d,%d) color=(%d,%d) size=(%d,%d) resultColor=%d\n", g->x, g->y, xColor, yColor, xParts[xColor], yParts[yColor], resultColor);
+	
+	//assert( ! (g->height - xSum[xSize-1] - xParts[xSize-1]) );
+	//assert( ! (g->width - ySum[ySize-1] - yParts[ySize-1]) );
+	
+	ng->height=xParts[xColor];
+	ng->width=yParts[yColor];
+	
+	MPI_Comm_split(g->comm, resultColor, 0, &(ng->comm));
+	
+	MPI_Comm_rank(ng->comm,&(ng->id));
+	
+	ng->topo.obj=g;
+	ng->topo.type=Tfgrid2;
+	
+	ng->reverse=g->reverse;
+	ng->reverse(ng);
+	ng->map=g->map;
+	
+	fgrid2CreateXLine(ng);
+	fgrid2CreateYLine(ng);
 	
 	free(xSum);
 	free(ySum);
