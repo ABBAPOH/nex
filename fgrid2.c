@@ -277,8 +277,8 @@ void fgrid2SliceParts(fgrid2 * g, fgrid2 * ng, int* xParts, int* yParts, int xSi
 			break;
 		}
 	
-	resultColor=xColor*xSize + yColor;
-	printf("Parts (%d,%d) color=(%d,%d) size=(%d,%d) resultColor=%d\n", g->x, g->y, xColor, yColor, xParts[xColor], yParts[yColor], resultColor);
+	resultColor=xColor*ySize + yColor;
+	//printf("Parts (%d,%d) color=(%d,%d) size=(%d,%d) resultColor=%d\n", g->x, g->y, xColor, yColor, xParts[xColor], yParts[yColor], resultColor);
 	
 	//assert( ! (g->height - xSum[xSize-1] - xParts[xSize-1]) );
 	//assert( ! (g->width - ySum[ySize-1] - yParts[ySize-1]) );

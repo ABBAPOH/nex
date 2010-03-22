@@ -313,6 +313,90 @@ void fgrid3SliceLinear(fgrid3 * g, fgrid3 * ng, int xSlice, int ySlice, int zSli
 	//!!!!!!!!!!untested
 }
 
+void fgrid3SliceParts(fgrid3 * g, fgrid3 * ng, int* xParts, int* yParts, int* zParts, int xSize, int ySize, int zSize)
+{
+	assert(g);
+	assert(ng);
+	assert(xParts);
+	assert(yParts);
+	assert(zParts);
+	assert(xSize>0);
+	assert(ySize>0);
+	assert(zSize>0);
+	
+	int i;
+	int* xSum=malloc(sizeof(int) * xSize);
+	int* ySum=malloc(sizeof(int) * ySize);
+	int* zSum=malloc(sizeof(int) * zSize);
+	int xColor=xSize-1;
+	int yColor=ySize-1;
+	int zColor=zSize-1;
+	int resultColor=0;
+	
+	xSum[0]=0;
+	ySum[0]=0;
+	zSum[0]=0;
+	
+	for(i=1;i<xSize;i++)
+		xSum[i]=xParts[i-1]+xSum[i-1];
+	for(i=1;i<ySize;i++)
+		ySum[i]=yParts[i-1]+ySum[i-1];
+	for(i=1;i<zSize;i++)
+		zSum[i]=zParts[i-1]+zSum[i-1];
+	
+	for(i=1;i<xSize;i++)
+		if(xSum[i]>g->x)
+		{
+			xColor=i-1;
+			break;
+		}
+	for(i=1;i<ySize;i++)
+		if(ySum[i]>g->y)
+		{
+			yColor=i-1;
+			break;
+		}
+	for(i=1;i<zSize;i++)
+		if(zSum[i]>g->z)
+		{
+			zColor=i-1;
+			break;
+		}
+	
+	resultColor=xColor*ySize*zSize + yColor*zSize + zColor;
+	//printf("Parts (%d,%d,%d) color=(%d,%d,%d) size=(%d,%d,%d) resultColor=%d\n", g->x, g->y, g->z, xColor, yColor, zColor, xParts[xColor], yParts[yColor], zParts[zColor], resultColor);
+	
+	//assert( ! (g->height - xSum[xSize-1] - xParts[xSize-1]) );
+	//assert( ! (g->width - ySum[ySize-1] - yParts[ySize-1]) );
+	//assert( ! (g->length - zSum[zSize-1] - zParts[zSize-1]) );
+	
+	ng->height = xParts[xColor];
+	ng->width = yParts[yColor];
+	ng->length = zParts[zColor];
+	
+	MPI_Comm_split(g->comm, resultColor, 0, &(ng->comm));
+	
+	MPI_Comm_rank(ng->comm,&(ng->id));
+	
+	ng->topo.obj=g;
+	ng->topo.type=Tfgrid3;
+	
+	ng->reverse=g->reverse;
+	ng->reverse(ng);
+	ng->map=g->map;
+	
+	fgrid3CreateXYLine(ng);
+	fgrid3CreateYZLine(ng);
+	fgrid3CreateXZLine(ng);
+	fgrid3CreateXSide(ng);
+	fgrid3CreateYSide(ng);
+	fgrid3CreateZSide(ng);
+	
+	free(xSum);
+	free(ySum);
+	free(zSum);
+}
+
 /*!
 	\fn void fgrid3Free(fgrid3 * g)
 	\brief Frees \a g structure

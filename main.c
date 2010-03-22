@@ -415,6 +415,7 @@ int main(int argc, char **argv)
 	fgrid3 fg3;
 	fgrid3 slfg3;
 	fgrid3 sllfg3;
+	fgrid3 slpfg3;
 	ntree t;
 	ntree t2;
 	ntree t3;
@@ -436,11 +437,16 @@ int main(int argc, char **argv)
 	int xParts[]={2};
 	int yParts[]={1,2,1};
 	
+	int xParts3[]={2};
+	int yParts3[]={1,1};
+	int zParts3[]={1,1};
+	
 	fgrid2Slice(&fg,&slfg, 1, 1);
 	fgrid3Slice(&fg3,&slfg3, 2, 1);
 	fgrid2SliceLinear(&fg,&sllfg, 1, 2);
 	fgrid3SliceLinear(&fg3,&sllfg3, 2, 1, 2);
 	fgrid2SliceParts(&fg,&slpfg, xParts, yParts, 1, 3);
+	fgrid3SliceParts(&fg3,&slpfg3, xParts3, yParts3, yParts3, 1, 2, 2);
 	
 	grid2Fromfgrid2(&g,&fg);
 	ntreeFromNative(&t);
@@ -476,6 +482,7 @@ int main(int argc, char **argv)
 	testfgrid3B(&fg3);
 	testfgrid3C(&fg3, &slfg3);
 	testfgrid3C(&fg3, &sllfg3);
+	testfgrid3C(&fg3, &slpfg3);
 	MPI_Barrier(MPI_COMM_WORLD);
 	
 	testmdaA();
@@ -503,6 +510,7 @@ int main(int argc, char **argv)
 	fgrid3Free(&fg3);
 	fgrid3Free(&slfg3);
 	fgrid3Free(&sllfg3);
+	fgrid3Free(&slpfg3);
 	
 	array1Free(&ar);
 	array2Free(&ar2);
