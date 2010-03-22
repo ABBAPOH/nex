@@ -314,17 +314,6 @@ void fgrid3SliceLinear(fgrid3 * g, fgrid3 * ng, int xSlice, int ySlice, int zSli
 }
 
 /*!
- \fn void fgrid3Barrier(fgrid3 * g)
- \brief Locks barrier on the whole grid \a g
-
- */
-void fgrid3Barrier(fgrid3 * g)
-{
-	assert(g);
-	MPI_Barrier(g->comm);
-}
-
-/*!
 	\fn void fgrid3Free(fgrid3 * g)
 	\brief Frees \a g structure
 
@@ -362,4 +351,81 @@ void fgrid3Free(fgrid3 * g)
 	
 	MPI_Comm_free(&(g->comm));
 	
+}
+
+/*!
+ \fn void fgrid3Barrier(fgrid3 * g)
+ \brief Locks barrier on the whole grid \a g
+
+ */
+void fgrid3Barrier(fgrid3 * g)
+{
+	assert(g);
+	MPI_Barrier(g->comm);
+}
+
+/*!
+ \fn void fgrid3BarrierX(fgrid3 * g)
+ \brief Locks barrier on the nodes with the same X \a g
+
+ */
+void fgrid3BarrierX(fgrid3 * g)
+{
+	assert(g);
+	MPI_Barrier(g->xSide);
+}
+
+/*!
+ \fn void fgrid3BarrierY(fgrid3 * g)
+ \brief Locks barrier on the nodes with the same Y \a g
+
+ */
+void fgrid3BarrierY(fgrid3 * g)
+{
+	assert(g);
+	MPI_Barrier(g->ySide);
+}
+
+/*!
+ \fn void fgrid3BarrierZ(fgrid3 * g)
+ \brief Locks barrier on the nodes with the same Z \a g
+
+ */
+void fgrid3BarrierZ(fgrid3 * g)
+{
+	assert(g);
+	MPI_Barrier(g->zSide);
+}
+
+/*!
+ \fn void fgrid3BarrierXY(fgrid3 * g)
+ \brief Locks barrier on the nodes with the same X and Y \a g
+
+ */
+void fgrid3BarrierXY(fgrid3 * g)
+{
+	assert(g);
+	MPI_Barrier(g->xyLine);
+}
+
+/*!
+ \fn void fgrid3BarrierYZ(fgrid3 * g)
+ \brief Locks barrier on the nodes with the same Y and Z \a g
+
+ */
+void fgrid3BarrierYZ(fgrid3 * g)
+{
+	assert(g);
+	MPI_Barrier(g->yzLine);
+}
+
+/*!
+ \fn void fgrid3BarrierXZ(fgrid3 * g)
+ \brief Locks barrier on the nodes with the same X and Z \a g
+
+ */
+void fgrid3BarrierXZ(fgrid3 * g)
+{
+	assert(g);
+	MPI_Barrier(g->xzLine);
 }

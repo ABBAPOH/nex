@@ -56,5 +56,11 @@ void fgrid3SliceLinear(fgrid3 * g,fgrid3 * ng, int xSlice, int ySlice, int zSlic
 void fgrid3Free(fgrid3 * g);
 
 void fgrid3Barrier(fgrid3 * g);
+void fgrid3BarrierX(fgrid3 * g);
+void fgrid3BarrierY(fgrid3 * g);
+void fgrid3BarrierZ(fgrid3 * g);
+void fgrid3BarrierXY(fgrid3 * g);
+void fgrid3BarrierYZ(fgrid3 * g);
+void fgrid3BarrierXZ(fgrid3 * g);
 
 #endif

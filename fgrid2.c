@@ -278,3 +278,25 @@ void fgrid2Barrier(fgrid2 * g)
 	assert(g);
 	MPI_Barrier(g->comm);
 }
+
+/*!
+ \fn void fgrid2BarrierX(fgrid2 * g)
+ \brief Locks barrier on the nodes with the same X \a g
+
+*/
+void fgrid2BarrierX(fgrid2 * g)
+{
+	assert(g);
+	MPI_Barrier(g->xLine);
+}
+
+/*!
+ \fn void fgrid2BarrierY(fgrid2 * g)
+ \brief Locks barrier on nodes with the same Y \a g
+
+*/
+void fgrid2BarrierY(fgrid2 * g)
+{
+	assert(g);
+	MPI_Barrier(g->yLine);
+}

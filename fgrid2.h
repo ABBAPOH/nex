@@ -31,5 +31,7 @@ void fgrid2Slice(fgrid2 * g,fgrid2 * ng, int dim, int sliceIndex);
 void fgrid2SliceLinear(fgrid2 * g,fgrid2 * ng, int xSlice, int ySlice);
 void fgrid2SliceParts(fgrid2 * g,fgrid2 * ng, int* xParts, int* yParts, int xSise, int ySize);
 void fgrid2Barrier(fgrid2 * g);
+void fgrid2BarrierX(fgrid2 * g);
+void fgrid2BarrierY(fgrid2 * g);
 
 #endif
