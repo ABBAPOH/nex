@@ -360,12 +360,12 @@ void testboxA()
 	n:MPI_Barrier(MPI_COMM_WORLD);
 }
 
-void mapFunc_my(void* obj, unsigned index, BoxHeader *bh)
+void mapFunc_my(void* obj, unsigned index, BoxHeader *bh, void* ext)
 {
-	printf("## [%d] == %d\n", index, *((int*)obj));
+	printf("## [%d] == %d  \t|  ext == %d\n", index, *((int*)obj), *((int*)ext));
 }
 
-int ifFunc_my(unsigned index)
+int ifFunc_my(unsigned index, void* ext)
 {
 	return (index % 10)!=5; 
 }
@@ -378,6 +378,7 @@ void testboxB()
 	MPI_Barrier(MPI_COMM_WORLD);
 	
 	int test;
+	int ext=235813;
 	
 	boxFromNative(&b,sizeof(int));
 	
@@ -394,7 +395,7 @@ void testboxB()
 	boxPut(&b,256 + 256 + 256 + 25,&test);
 	
 	boxDel(&b, 256 + 256 + 25);
-	boxMapSome(&b, &mapFunc_my, ifFunc_my);
+	boxMapSome(&b, &mapFunc_my, &ifFunc_my, &ext);
 	
 	boxFree(&b);
 	MPI_Barrier(MPI_COMM_WORLD);

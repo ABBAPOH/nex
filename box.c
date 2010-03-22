@@ -260,29 +260,29 @@ void boxDel(BoxHeader *bh, unsigned index)
 }
 
 /*!
-  \fn void boxMapRec(BoxHeader *bh, BoxNode *b, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh), int (*ifFunc)(unsigned index))
+  \fn void boxMapRec(BoxHeader *bh, BoxNode *b, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh, void* ext), int (*ifFunc)(unsigned index, void* ext), void* ext)
   \brief Inner Function. Realization of boxMap*.
 
   If \a ifFunc == 0, all works with all nodes, otherwise selects them using \a IfFunc
 
 */
-void boxMapRec(BoxHeader *bh, BoxNode *b, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh), int (*ifFunc)(unsigned index))
+void boxMapRec(BoxHeader *bh, BoxNode *b, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh, void* ext), int (*ifFunc)(unsigned index, void* ext), void* ext)
 {
 	//private
 	assert(bh);
 	assert(b);
 	assert(mapFunc);
 	
-	if((b->data!=NULL) && ( (ifFunc==NULL)  ||  (ifFunc(b->index)) ))
+	if((b->data!=NULL) && ( (ifFunc==NULL)  ||  (ifFunc(b->index, ext)) ))
 	{
-		mapFunc(b->data, b->index, bh);
+		mapFunc(b->data, b->index, bh, ext);
 	}
 	
 	if(b->nextlvl!=NULL)
 	{
 		int i;
 		for(i=0;i<b->levelSize;i++)
-			boxMapRec(bh, &(b->nextlvl[i]), mapFunc, ifFunc);
+			boxMapRec(bh, &(b->nextlvl[i]), mapFunc, ifFunc, ext);
 	}
 	
 	return;
@@ -293,12 +293,12 @@ void boxMapRec(BoxHeader *bh, BoxNode *b, void (*mapFunc)(void* obj, unsigned in
   \brief Applies \a mapFunc to all data in box \a bh.
 
 */
-void boxMapAll(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh))
+void boxMapAll(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh, void* ext), void* ext)
 {
 	assert(bh);
 	assert(mapFunc);
 	
-	boxMapRec(bh, bh->box, mapFunc, NULL);
+	boxMapRec(bh, bh->box, mapFunc, NULL, ext);
 }
 
 /*!
@@ -306,10 +306,10 @@ void boxMapAll(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHead
   \brief Applies \a mapFunc to data in box \a bh only if \a ifFunc returns 1 being applied to that \a index.
 
 */
-void boxMapSome(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh), int (*ifFunc)(unsigned index))
+void boxMapSome(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh, void* ext), int (*ifFunc)(unsigned index, void* ext), void* ext)
 {
 	assert(bh);
 	assert(mapFunc);
 	
-	boxMapRec(bh, bh->box, mapFunc, ifFunc);
+	boxMapRec(bh, bh->box, mapFunc, ifFunc, ext);
 }

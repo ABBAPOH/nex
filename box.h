@@ -39,7 +39,7 @@ void boxPut(BoxHeader *bh, unsigned index, void* data);
 void boxPutNoCopy(BoxHeader *bh, unsigned index, void* data);
 void boxDel(BoxHeader *bh, unsigned index);
 
-void boxMapAll(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh));
-void boxMapSome(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh), int (*ifFunc)(unsigned index));
+void boxMapAll(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh, void* ext), void* ext);
+void boxMapSome(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh, void* ext), int (*ifFunc)(unsigned index, void* ext), void* ext);
 
 #endif
