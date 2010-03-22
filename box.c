@@ -131,10 +131,10 @@ void *boxNodeGet(BoxNode *b, unsigned index, BoxHeader *bh)
 	assert(b);
 	assert(bh);
 	
-	if(!(b->set))
-		return NULL;
+	//if(!(b->set))
+	//	return NULL;
 	
-	if(index==b->index)
+	if((b->set) && (index==b->index))
 		return b->data;
 	
 	if(b->nextlvl==NULL)
@@ -212,6 +212,24 @@ void boxNodePut(BoxNode *b, unsigned index, void* data, BoxHeader *bh, unsigned 
 	
 }
 
+void boxNodeDel(BoxNode *b, unsigned index, BoxHeader *bh)
+{
+	assert(b);
+	assert(bh);
+	
+	if((b->set) && (index==b->index))
+	{
+		b->index=-1;
+		b->set=0;
+		MPI_Free_mem(b->data);
+		b->data=NULL;
+		return;
+	}
+	
+	if(b->nextlvl!=NULL)
+		boxNodeDel(  &(b->nextlvl[bh->hash(index,b->level)]) , index, bh);
+}
+
 /*!
   \fn void* boxGet(BoxHeader *bh, unsigned index)
   \brief Gets element by \a index
@@ -248,6 +266,13 @@ void boxPutNoCopy(BoxHeader *bh, unsigned index, void* data)
 	assert(data);
 	
 	boxNodePut(bh->box, index, data, bh, 0);
+}
+
+void boxDel(BoxHeader *bh, unsigned index)
+{
+	assert(bh);
+	
+	boxNodeDel(bh->box, index, bh);
 }
 
 /*!

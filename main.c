@@ -388,11 +388,12 @@ void testboxB()
 	test=999;
 	boxPut(&b,25,&test);
 	
-	test=100500;
-	boxPut(&b,256 + 256 + 25,&test);
 	test=100600;
+	boxPut(&b,256 + 256 + 25,&test);
+	test=100500;
 	boxPut(&b,256 + 256 + 256 + 25,&test);
 	
+	boxDel(&b, 256 + 256 + 25);
 	boxMapSome(&b, &mapFunc_my, ifFunc_my);
 	
 	boxFree(&b);
