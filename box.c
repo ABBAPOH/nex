@@ -1,13 +1,13 @@
 #include "box.h"
 
 /*!
-  \fn unsigned hash_native(unsigned index, int lvl)
+  \fn unsigned hash_native(long long index, int lvl)
   \brief Native hash-function.
 
 */
-unsigned hash_native(unsigned index, int lvl)
+unsigned hash_native(long long index, int lvl)
 {
-	return (index>>(8*(lvl-1))   )&255;
+	return (index>>(8*(lvl))   )&255;
 }
 
 /*!
@@ -15,11 +15,17 @@ unsigned hash_native(unsigned index, int lvl)
   \brief Returns box level size.
 
 */
-void levelAlloc_native(struct boxtemp* b, int lvl)
+void levelAlloc_native(struct boxheadertemp* bh)
 {
-	assert(b);
+	assert(bh);
 	
-	b->levelSize=256;
+	int i;
+	
+	bh->maxLevel=4;
+	bh->levelSizes=malloc(sizeof(int)*bh->maxLevel);
+	
+	for(i=0;i<bh->maxLevel;i++)
+		bh->levelSizes[i]=256;
 }
 
 /*!
@@ -35,12 +41,10 @@ void boxFromNative(BoxHeader *bh, int dataSize)
 	bh->dataSize=dataSize;
 	bh->hash=hash_native;
 	bh->levelAlloc=levelAlloc_native;
-	bh->maxLevel=4;//depends on native
+	bh->levelAlloc(bh);
 	
 	bh->box=malloc(sizeof(BoxNode));
 	boxNodeNew(bh->box,bh);
-	
-	assert(bh->box->level  <=  bh->maxLevel);
 }
 
 /*!
@@ -54,13 +58,9 @@ void boxNodeNew(BoxNode *b, BoxHeader *bh)
 	assert(bh);
 	
 	b->index=-1;
-	b->level=1;
 	
 	b->data=NULL;
 	b->nextlvl=NULL;
-	
-	bh->levelAlloc(b,b->level);
-	
 }
 
 /*!
@@ -77,23 +77,22 @@ void boxFree(BoxHeader *bh)
 	bh->maxLevel=-1;
 	bh->dataSize=-1;
 	
-	boxNodeFree(bh->box);
+	boxNodeFree(bh->box, bh, 0);
 	free(bh->box);
+	free(bh->levelSizes);
 }
 
 /*!
-  \fn void boxNodeFree(BoxNode *b)
+  \fn void boxNodeFree(BoxNode *b, BoxHeader *bh, int level)
   \brief Inner function. Recursively frees nodes.
 
   Used in boxFree.
 
 */
-void boxNodeFree(BoxNode *b)
+void boxNodeFree(BoxNode *b, BoxHeader *bh, int level)
 {
 	assert(b);
-	
-	b->index=-1;
-	b->level=-1;
+	assert(bh);
 	
         if (b->data != NULL)
 	{
@@ -104,22 +103,23 @@ void boxNodeFree(BoxNode *b)
         if (b->nextlvl != NULL)
 	{
 		int i;
-		for(i=0;i<b->levelSize;i++)
-			boxNodeFree(   &((b->nextlvl)[i])  );
+		for(i=0;i<bh->levelSizes[level];i++)
+			boxNodeFree(   &((b->nextlvl)[i])  , bh, level+1);
 		free(b->nextlvl);
 		b->nextlvl=NULL;
-		b->levelSize=-1;
 	}
+	
+	b->index=-1;
 }
 
 /*!
-  \fn void *boxNodeGet(BoxNode *b, unsigned index, BoxHeader *bh)
+  \fn void *boxNodeGet(BoxNode *b, long long index, BoxHeader *bh, int level)
   \brief Inner function. Resursively searches element index.
   \param b Node to start with
   \param index Index to search
   \param bh Box Header
 */
-void *boxNodeGet(BoxNode *b, unsigned index, BoxHeader *bh)
+void *boxNodeGet(BoxNode *b, long long index, BoxHeader *bh, int level)
 {
 	assert(b);
 	assert(bh);
@@ -130,11 +130,11 @@ void *boxNodeGet(BoxNode *b, unsigned index, BoxHeader *bh)
 	if(b->nextlvl==NULL)
 		return NULL;
 	
-	return boxNodeGet(  &(b->nextlvl[bh->hash(index,b->level)]) , index,bh);
+	return boxNodeGet(  &(b->nextlvl[bh->hash(index,level)]) , index, bh, level+1);
 }
 
 /*!
-  \fn void boxNodePut(BoxNode *b, unsigned index, void* data, BoxHeader *bh, unsigned char copyFlag)
+  \fn void boxNodePut(BoxNode *b, long long index, void* data, BoxHeader *bh, int level, unsigned char copyFlag)
   \brief Inner function. Inserts \a data by index \a index
   \param b Node to start with
   \param index Index to insert
@@ -144,7 +144,7 @@ void *boxNodeGet(BoxNode *b, unsigned index, BoxHeader *bh)
 
   Allocates memory for cells if necessary
 */
-void boxNodePut(BoxNode *b, unsigned index, void* data, BoxHeader *bh, unsigned char copyFlag)
+void boxNodePut(BoxNode *b, long long index, void* data, BoxHeader *bh, int level, unsigned char copyFlag)
 {
 	assert(b);
 	assert(bh);
@@ -180,24 +180,23 @@ void boxNodePut(BoxNode *b, unsigned index, void* data, BoxHeader *bh, unsigned 
 		return;
 	}
 	
-	assert(b->level <= bh->maxLevel);
+	assert(level < bh->maxLevel);
 	
 	if(b->nextlvl==NULL)
 	{
-		b->nextlvl=malloc(sizeof(BoxNode) * b->levelSize);
+		b->nextlvl=malloc(sizeof(BoxNode) * bh->levelSizes[level]);
 		int i;
-		for(i=0;i<b->levelSize;i++)
+		for(i=0;i<bh->levelSizes[level];i++)
 		{
-			boxNodeNew(  &((b->nextlvl)[i])  ,bh);
-			b->nextlvl[i].level=b->level+1;
+			boxNodeNew(  &((b->nextlvl)[i])  , bh);
 		}
 	}
 	
-	boxNodePut(  &(b->nextlvl[bh->hash(index,b->level)])  , index, data, bh, copyFlag);
+	boxNodePut(  &(b->nextlvl[bh->hash(index,level)])  , index, data, bh, level+1, copyFlag);
 	
 }
 
-void boxNodeDel(BoxNode *b, unsigned index, BoxHeader *bh)
+void boxNodeDel(BoxNode *b, long long index, BoxHeader *bh, int level)
 {
 	assert(b);
 	assert(bh);
@@ -211,62 +210,62 @@ void boxNodeDel(BoxNode *b, unsigned index, BoxHeader *bh)
 	}
 	
 	if(b->nextlvl!=NULL)
-		boxNodeDel(  &(b->nextlvl[bh->hash(index,b->level)]) , index, bh);
+		boxNodeDel(  &(b->nextlvl[bh->hash(index,level)]) , index, bh, level+1);
 }
 
 /*!
-  \fn void* boxGet(BoxHeader *bh, unsigned index)
+  \fn void* boxGet(BoxHeader *bh, long long index)
   \brief Gets element by \a index
 
 */
-void* boxGet(BoxHeader *bh, unsigned index)
+void* boxGet(BoxHeader *bh, long long index)
 {
 	assert(bh);
 	
-	return boxNodeGet(bh->box, index, bh);
+	return boxNodeGet(bh->box, index, bh, 0);
 }
 
 /*!
-  \fn void boxPut(BoxHeader *bh, unsigned index, void* data)
+  \fn void boxPut(BoxHeader *bh, long long index, void* data)
   \brief Inserts \a data by \a index
 
 */
-void boxPut(BoxHeader *bh, unsigned index, void* data)
+void boxPut(BoxHeader *bh, long long index, void* data)
 {
 	assert(bh);
 	assert(data);
 	
-	boxNodePut(bh->box, index, data, bh, 1);
+	boxNodePut(bh->box, index, data, bh, 0, 1);
 }
 
 /*!
-  \fn void boxPutNoCopy(BoxHeader *bh, unsigned index, void* data)
+  \fn void boxPutNoCopy(BoxHeader *bh, long long index, void* data)
   \brief Inserts \a pointer to data (not a copy) by \a index.
 
 */
-void boxPutNoCopy(BoxHeader *bh, unsigned index, void* data)
+void boxPutNoCopy(BoxHeader *bh, long long index, void* data)
 {
 	assert(bh);
 	assert(data);
 	
-	boxNodePut(bh->box, index, data, bh, 0);
+	boxNodePut(bh->box, index, data, bh, 0, 0);
 }
 
-void boxDel(BoxHeader *bh, unsigned index)
+void boxDel(BoxHeader *bh, long long index)
 {
 	assert(bh);
 	
-	boxNodeDel(bh->box, index, bh);
+	boxNodeDel(bh->box, index, bh, 0);
 }
 
 /*!
-  \fn void boxMapRec(BoxHeader *bh, BoxNode *b, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh, void* ext), int (*ifFunc)(unsigned index, void* ext), void* ext)
+  \fn void boxMapRec(BoxHeader *bh, BoxNode *b, void (*mapFunc)(void* obj, long long index, BoxHeader *bh, void* ext), int (*ifFunc)(long long index, void* ext), void* ext, int level)
   \brief Inner Function. Realization of boxMap*.
 
   If \a ifFunc == 0, all works with all nodes, otherwise selects them using \a IfFunc
 
 */
-void boxMapRec(BoxHeader *bh, BoxNode *b, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh, void* ext), int (*ifFunc)(unsigned index, void* ext), void* ext)
+void boxMapRec(BoxHeader *bh, BoxNode *b, void (*mapFunc)(void* obj, long long index, BoxHeader *bh, void* ext), int (*ifFunc)(long long index, void* ext), void* ext, int level)
 {
 	//private
 	assert(bh);
@@ -281,35 +280,35 @@ void boxMapRec(BoxHeader *bh, BoxNode *b, void (*mapFunc)(void* obj, unsigned in
 	if(b->nextlvl!=NULL)
 	{
 		int i;
-		for(i=0;i<b->levelSize;i++)
-			boxMapRec(bh, &(b->nextlvl[i]), mapFunc, ifFunc, ext);
+		for(i=0;i<bh->levelSizes[level];i++)
+			boxMapRec(bh, &(b->nextlvl[i]), mapFunc, ifFunc, ext, level+1);
 	}
 	
 	return;
 }
 
 /*!
-  \fn void boxMapAll(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh))
+  \fn void boxMapAll(BoxHeader *bh, void (*mapFunc)(void* obj, long long index, BoxHeader *bh))
   \brief Applies \a mapFunc to all data in box \a bh.
 
 */
-void boxMapAll(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh, void* ext), void* ext)
+void boxMapAll(BoxHeader *bh, void (*mapFunc)(void* obj, long long index, BoxHeader *bh, void* ext), void* ext)
 {
 	assert(bh);
 	assert(mapFunc);
 	
-	boxMapRec(bh, bh->box, mapFunc, NULL, ext);
+	boxMapRec(bh, bh->box, mapFunc, NULL, ext, 0);
 }
 
 /*!
-  \fn void boxMapSome(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh), int (*ifFunc)(unsigned index))
+  \fn void boxMapSome(BoxHeader *bh, void (*mapFunc)(void* obj, long long index, BoxHeader *bh), int (*ifFunc)(long long index))
   \brief Applies \a mapFunc to data in box \a bh only if \a ifFunc returns 1 being applied to that \a index.
 
 */
-void boxMapSome(BoxHeader *bh, void (*mapFunc)(void* obj, unsigned index, BoxHeader *bh, void* ext), int (*ifFunc)(unsigned index, void* ext), void* ext)
+void boxMapSome(BoxHeader *bh, void (*mapFunc)(void* obj, long long index, BoxHeader *bh, void* ext), int (*ifFunc)(long long index, void* ext), void* ext)
 {
 	assert(bh);
 	assert(mapFunc);
 	
-	boxMapRec(bh, bh->box, mapFunc, ifFunc, ext);
+	boxMapRec(bh, bh->box, mapFunc, ifFunc, ext, 0);
 }

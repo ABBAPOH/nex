@@ -360,12 +360,12 @@ void testboxA()
 	n:MPI_Barrier(MPI_COMM_WORLD);
 }
 
-void mapFunc_my(void* obj, unsigned index, BoxHeader *bh, void* ext)
+void mapFunc_my(void* obj, long long index, BoxHeader *bh, void* ext)
 {
 	printf("## [%d] == %d  \t|  ext == %d\n", index, *((int*)obj), *((int*)ext));
 }
 
-int ifFunc_my(unsigned index, void* ext)
+int ifFunc_my(long long index, void* ext)
 {
 	return (index % 10)!=5; 
 }
@@ -427,10 +427,6 @@ int main(int argc, char **argv)
 	if(init(&argc,&argv))
 		return 1;
 	
-	//testfgrid3A();
-	//return 0;
-	
-	
 	fgrid2FromNative(&fg);
 // 	fgrid3FromNative(&fg3);
 	fgrid3FromRange(&fg3,MPI_COMM_WORLD,2,2,2);
@@ -480,6 +476,7 @@ int main(int argc, char **argv)
 	testfgrid2A(&fg, &sllfg);
 	testfgrid2A(&fg, &slpfg);
 	
+	//testfgrid3A();
 	testfgrid3B(&fg3);
 	testfgrid3C(&fg3, &slfg3);
 	testfgrid3C(&fg3, &sllfg3);
@@ -490,7 +487,7 @@ int main(int argc, char **argv)
 	testarray1A(&ar);
 	testarray2A(&ar2);
 	
-	//testboxA();
+	//testboxA();//be careful: this test req ~1.5 gig of ram
 	testboxB();
 	
 	//testgrouping();
