@@ -453,6 +453,7 @@ int main(int argc, char **argv)
 	array1 ar;
 	array2 ar2;
 	array21 ar21;
+	cache c;
 	
 	
 	if(init(&argc,&argv))
@@ -484,6 +485,7 @@ int main(int argc, char **argv)
 	array1FromRange(&ar, MPI_COMM_WORLD, 16, sizeof(int));
 	array2FromRange(&ar2, MPI_COMM_WORLD, 8, 4, sizeof(int));
 	array21FromArray1(&ar21, &ar, 4, 4);
+	cacheBoxFromArray1(&c, &ar);
 	
 	treecast=(rank)%(nativeX*nativeY);
 	
@@ -546,6 +548,7 @@ int main(int argc, char **argv)
 	array1Free(&ar);
 	array2Free(&ar2);
 	array21Free(&ar21);
+	cacheFree(&c);
 	
 	MPI_Finalize();
 	return 0;

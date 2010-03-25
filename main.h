@@ -9,6 +9,7 @@
 #include "array.h"
 #include "range.h"
 #include "box.h"
+#include "cache.h"
 
 int numtasks,rank;
 

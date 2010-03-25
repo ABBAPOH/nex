@@ -422,3 +422,22 @@ void array21Fence(array21 *a)
 	assert(a);
 	array1Fence(a->arr1);
 }
+
+int array1IsLocal(array1 *a, long long i)
+{
+	assert(a);
+	return a->map(i, a).id == a->id;
+}
+
+int array2IsLocal(array2 *a, int x, int y)
+{
+	assert(a);
+	return a->map(x, y, a).id == a->id;
+}
+
+int array21IsLocal(array21 *a, int x, int y)
+{
+	assert(a);
+	return a->arr1->map(a->map(x, y, a), a->arr1).id == a->arr1->id;
+}
+

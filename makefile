@@ -5,7 +5,7 @@ LIB_PATH = -L/usr/lib64/mpi/gcc/openmpi/lib64
 INCLUDE_PATH = -I/usr/lib64/mpi/gcc/openmpi/include
 LIBS = -lmpi -lm
 BINARY_NAME = nex
-SOURCES = main.c fgrid2.c fgrid3.c grid2.c ntree.c array.c narray.c range.c box.c
+SOURCES = main.c fgrid2.c fgrid3.c grid2.c ntree.c array.c narray.c range.c box.c cache.c
 COMMON_HEADERS = defs.h
 HEADERS = $(SOURCES:.c=.h)
 OBJECTS = $(SOURCES:.c=.o)
