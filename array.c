@@ -60,7 +60,7 @@ void factorizeWithRatio(int nodes, int w, int h, int* x, int* y)
   \brief Returns pointer to process containing a[i] element and local index in this process (a[i] -> {pid, offset})
 
 */
-pointer array1_map(int i, array1 *a)
+pointer array1_map(long long i, array1 *a)
 {
 	assert(a);
 	assert((i>=0) && (i<a->size));
@@ -158,6 +158,15 @@ void array2_alloc(array2 *a)
 	MPI_Win_create(a->data,a->thisSizeX * a->thisSizeY * a->objSize,a->objSize,MPI_INFO_NULL,a->comm,&(a->win));
 }
 
+long long array21_map(int x, int y, array21 *a)
+{
+	assert(a);
+	assert((x>=0) && (x<a->sizeX));
+	assert((y>=0) && (y<a->sizeY));
+	
+	return x*a->sizeY + y;
+}
+
 /*!
   \fn void array1Free(array1 *a)
   \brief Frees array \a a.
@@ -220,12 +229,24 @@ void array2Free(array2 *a)
 	a->topo.obj=NULL;
 }
 
+void array21Free(array21 *a)
+{
+	assert(a);
+	
+	a->sizeX=a->sizeY=-1;
+	a->map=NULL;
+	a->arr1=NULL;
+	
+	a->topo.type=Tnone;
+	a->topo.obj=NULL;
+}
+
 /*!
   \fn void array1FromRange(array1 *a, MPI_Comm comm, int size, int objSize)
   \brief Creates one-dimensional array with size \a size and element size \a objSize from communicator \a comm.
 
 */
-void array1FromRange(array1 *a, MPI_Comm comm, int size, int objSize)
+void array1FromRange(array1 *a, MPI_Comm comm, long long size, int objSize)
 {
 	assert(a);
 	assert(size>0);
@@ -243,7 +264,7 @@ void array1FromRange(array1 *a, MPI_Comm comm, int size, int objSize)
 	
 	a->alloc=(void(*)(array1 *a)) (array1_alloc);
 	a->alloc(a);
-	a->map=(pointer(*)(int i,array1 *a)) (array1_map);
+	a->map=(pointer(*)(long long i,array1 *a)) (array1_map);
 	
 }
 
@@ -274,12 +295,30 @@ void array2FromRange(array2 *a, MPI_Comm comm, int sizeX, int sizeY, int objSize
 	a->map=(pointer(*)(int x, int y,array2 *a)) (array2_map);
 }
 
+void array21FromArray1(array21 *a, array1 *a1, int sizeX, int sizeY)
+{
+	assert(a);
+	assert(a1);
+	assert(sizeX>0);
+	assert(sizeY>0);
+	assert((long long)sizeX * (long long)sizeY == a1->size);
+	a->sizeX=sizeX;
+	a->sizeY=sizeY;
+	
+	a->topo.obj=NULL;
+	a->topo.type=Tnone;
+	
+	a->arr1=a1;
+	
+	a->map=(long long(*)(int x, int y, array21 *a)) (array21_map);
+}
+
 /*!
   \fn void array1Put(array1 *a, int i, void *send)
   \brief Sends element \a send to \a a[\a i]
 
 */
-void array1Put(array1 *a, int i, void *send)
+void array1Put(array1 *a, long long i, void *send)
 {
 	assert(a);
 	assert(send);
@@ -304,12 +343,20 @@ void array2Put(array2 *a, int x, int y, void *send)
 	
 }
 
+void array21Put(array21 *a, int x, int y, void *send)
+{
+	assert(a);
+	assert(send);
+	
+	array1Put(a->arr1, a->map(x, y, a), send);
+}
+
 /*!
   \fn void array1Get(array1 *a, int i,void**recv)
   \brief Gets element \a a[\a i] to \a recv
 
 */
-void array1Get(array1 *a, int i, void**recv)
+void array1Get(array1 *a, long long i, void**recv)
 {
 	assert(a);
 	assert(recv);
@@ -336,6 +383,14 @@ void array2Get(array2 *a, int x, int y, void**recv)
 	MPI_Get(*recv, a->objSize, MPI_CHAR, p.id, p.index, a->objSize, MPI_CHAR, a->win);
 }
 
+void array21Get(array21 *a, int x, int y, void**recv)
+{
+	assert(a);
+	assert(recv);
+	
+	array1Get(a->arr1, a->map(x, y, a), recv);
+}
+
 /*!
   \fn void array1Fence(array1 *a)
   \brief Wrapper over MPI_Win_fence.
@@ -346,7 +401,7 @@ void array2Get(array2 *a, int x, int y, void**recv)
 void array1Fence(array1 *a)
 {
 	assert(a);
-	MPI_Win_fence(0, a->win);	
+	MPI_Win_fence(0, a->win);
 }
 
 /*!
@@ -359,5 +414,11 @@ void array1Fence(array1 *a)
 void array2Fence(array2 *a)
 {
 	assert(a);
-	MPI_Win_fence(0, a->win);	
+	MPI_Win_fence(0, a->win);
+}
+
+void array21Fence(array21 *a)
+{
+	assert(a);
+	array1Fence(a->arr1);
 }

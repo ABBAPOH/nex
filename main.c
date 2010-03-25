@@ -162,7 +162,33 @@ void testarray2A(array2 *a)
 	
 	printf("array2   put=%d local=%d get=%d\n",a->id,((int*)(a->data))[p.index],*recv);
 	
+	free(recv);
+	
 	MPI_Barrier(a->comm);
+}
+
+void testarray21A(array21 *a)
+{
+	if(a->arr1->id==0)printf("\n\ntestarray21A\n\n");
+	MPI_Barrier(a->arr1->comm);
+	
+	int magic=a->arr1->id;
+	int* recv=NULL;
+	
+	int x=(a->arr1->id)/a->sizeY;
+	int y=(a->arr1->id)%a->sizeY;
+	
+	array21Fence(a);
+	array21Put(a, x, y, &magic);
+	array21Fence(a);
+	array21Get(a, x, y, (void**) &recv);
+	array21Fence(a);
+	
+	printf("array21   put=%d get=%d\n",a->arr1->id,*recv);
+	
+	free(recv);
+	
+	MPI_Barrier(a->arr1->comm);
 }
 
 void testntreeA(ntree *t)
@@ -409,19 +435,24 @@ int main(int argc, char **argv)
 	int treereduce=0;
 	
 	grid2 g;
+	
 	fgrid2 fg;
 	fgrid2 slfg;
 	fgrid2 sllfg;
 	fgrid2 slpfg;
+	
 	fgrid3 fg3;
 	fgrid3 slfg3;
 	fgrid3 sllfg3;
 	fgrid3 slpfg3;
+	
 	ntree t;
 	ntree t2;
 	ntree t3;
+	
 	array1 ar;
 	array2 ar2;
+	array21 ar21;
 	
 	
 	if(init(&argc,&argv))
@@ -450,8 +481,9 @@ int main(int argc, char **argv)
 	//ntreeFromfgrid2(&t2,&fg);
 	ntreeFromfgrid2Param(&t2,&fg,0,1,1);
 	ntreeFromfgrid3(&t3,&fg3);
-	array1FromRange(&ar,MPI_COMM_WORLD,16,sizeof(int));
-	array2FromRange(&ar2,MPI_COMM_WORLD,8,4,sizeof(int));
+	array1FromRange(&ar, MPI_COMM_WORLD, 16, sizeof(int));
+	array2FromRange(&ar2, MPI_COMM_WORLD, 8, 4, sizeof(int));
+	array21FromArray1(&ar21, &ar, 4, 4);
 	
 	treecast=(rank)%(nativeX*nativeY);
 	
@@ -486,6 +518,7 @@ int main(int argc, char **argv)
 	testmdaA();
 	testarray1A(&ar);
 	testarray2A(&ar2);
+	testarray21A(&ar21);
 	
 	//testboxA();//be careful: this test req ~1.5 gig of ram
 	testboxB();
@@ -512,6 +545,7 @@ int main(int argc, char **argv)
 	
 	array1Free(&ar);
 	array2Free(&ar2);
+	array21Free(&ar21);
 	
 	MPI_Finalize();
 	return 0;
