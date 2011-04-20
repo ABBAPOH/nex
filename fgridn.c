@@ -311,16 +311,32 @@ void fgridnDivide(fgridn * g,fgridn * ng, int dim, int divideStep)
 	
 	for(i=0; i < g->dimsCount; i++)
 		if(i == dim)
-		{
-			if(g->index[i] < sliceIndex)
-				ng->sizes[i] = sliceIndex;
-			else
-				ng->sizes[i] = g->sizes[i] - sliceIndex;
-		}
+			ng->sizes[i] = g->sizes[i] / divideStep;
 		else
-		{
 			ng->sizes[i] = g->sizes[i];
-		}
+	ng->sizes[g->dimsCount] = divideStep;
+	ng->totalSize = g->totalSize;
+	
+	MPI_Comm_dup(g->comm, &(ng->comm));
+	MPI_Comm_rank(ng->comm, &(ng->id));
+	
+	ng->topo.obj=g;
+	ng->topo.type=Tfgridn;
+	
+	ng->reverse = g->reverse;
+	ng->reverse(ng);
+	ng->map = g->map;
+	
+	ng->subdimsCount = g->subdimsCount * 2;
+	ng->subDims = malloc(sizeof(MPI_Comm) * ng->subdimsCount);
+	ng->subDimsSelf = malloc(sizeof(int) * ng->subdimsCount);
+	
+	for(i=0; i< ng->subdimsCount; i++)
+	{
+		ng->subDimsSelf[i] = -1;
+		if((i < g->subdimsCount) && (g->subDimsSelf[i] != -1))
+			fgridnCreateSubDimMask(ng, i);
+	}
 }
 
 void fgridnFree(fgridn * g)

@@ -282,6 +282,7 @@ void testfgrid3C(fgrid3 * fg3, fgrid3 * slfg3)
 
 void testfgridnA()
 {
+	if(rank==0)printf("\n\ntestfgridnA\n\n");
 	fgridn* g = malloc(sizeof(fgridn));
 	fgridn* sg = malloc(sizeof(fgridn));
 	
@@ -329,8 +330,44 @@ void testfgridnA()
 	printf("   rank=%2d  |  coords = (%2d,%2d)   |  sliced = (%2d,%2d)\n", rank, g->index[0], g->index[1]
 		, sg->index[0], sg->index[1]);
 	
+	fgridnBarrier(g);
 	fgridnFree(sg);
 	free(sg);
+	fgridnFree(g);
+	free(g);
+}
+
+void testfgridnB()
+{
+	if(rank==0)printf("\n\ntestfgridnB\n\n");
+	
+	fgridn* g = malloc(sizeof(fgridn));
+	fgridn* dg = malloc(sizeof(fgridn));
+	fgridn* dg2 = malloc(sizeof(fgridn));
+	
+	fgridnFromNative(g);
+	fgridnDivide(g, dg, 0, 4);
+	fgridnDivide(dg, dg2, 1, 2);
+	
+	if(g->id == 0)
+	{
+		printf("1 sizes :(%2d) \n", g->sizes[0]);
+		printf("2 sizes :(%2d,%2d) \n", dg->sizes[0], dg->sizes[1]);
+		printf("3 sizes :(%2d,%2d,%2d) \n", dg2->sizes[0], dg2->sizes[1], dg2->sizes[2]);
+	}
+	
+	fgridnBarrier(g);
+	
+	printf("   rank=%2d  |  coords = (%2d) \n", rank, g->index[0]);
+	printf("   ->> rank=%2d  |  coords = (%2d,%2d) \n", rank, dg->index[0], dg->index[1]);
+	printf("      ->> rank=%2d  |  coords = (%2d,%2d,%2d) \n", rank, dg2->index[0], dg2->index[1], dg2->index[2]);
+	
+	fgridnBarrier(g);
+	
+	fgridnFree(dg2);
+	free(dg2);
+	fgridnFree(dg);
+	free(dg);
 	fgridnFree(g);
 	free(g);
 }
@@ -741,6 +778,7 @@ int main(int argc, char **argv)
 	//testfgrid3C(&fg3, &sllfg3);
 	//testfgrid3C(&fg3, &slpfg3);
 	testfgridnA();
+	testfgridnB();
 	MPI_Barrier(MPI_COMM_WORLD);
 	
 	//testmdaA();
