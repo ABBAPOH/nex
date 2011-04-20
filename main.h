@@ -4,12 +4,14 @@
 #include "defs.h"
 #include "fgrid2.h"
 #include "fgrid3.h"
+#include "fgridn.h"
 #include "grid2.h"
 #include "ntree.h"
 #include "array.h"
 #include "range.h"
 #include "box.h"
 #include "cache.h"
+#include "tasks.h"
 
 int numtasks,rank;
 

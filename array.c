@@ -441,3 +441,20 @@ int array21IsLocal(array21 *a, int x, int y)
 	return a->arr1->map(a->map(x, y, a), a->arr1).id == a->arr1->id;
 }
 
+abstractPointer newP1D(long long i)
+{
+	abstractPointer p;
+	p.dim=1;
+	p.pointer.p1.i=i;
+	return p;
+}
+
+abstractPointer newP2D(int x, int y)
+{
+	abstractPointer p;
+	p.dim=2;
+	p.pointer.p2.x=x;
+	p.pointer.p2.y=y;
+	return p;
+}
+

@@ -5,6 +5,11 @@
 
 typedef enum {TAerror=0, TAarray1, TAarray2, TAarray21} arrayType;
 
+typedef struct {int x; int y;} p2D;
+typedef struct {long long i;} p1D;
+typedef union{p2D p2; p1D p1;} pUnion;
+typedef struct{unsigned char dim; pUnion pointer;} abstractPointer;
+
 typedef struct {
 	MPI_Comm comm; 
 	long long id,index;} pointer;
@@ -64,5 +69,9 @@ void array21Fence(array21 *a);
 int array1IsLocal(array1 *a, long long i);
 int array2IsLocal(array2 *a, int x, int y);
 int array21IsLocal(array21 *a, int x, int y);
+
+abstractPointer newP1D(long long i);
+abstractPointer newP2D(int x, int y);
+
 
 #endif

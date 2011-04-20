@@ -11,28 +11,33 @@
 
 typedef enum {Terror=0, Tbox} cacheType;
 
-typedef struct {
+/*typedef struct {
 	void* data; 
 	unsigned char flag;
-} cacheItem;
+} CacheItem;*/
 
 typedef struct cachetemp {
-	void (*put)(struct cachetemp *c, long long i, void* send, unsigned flags); 
-	void (*get)(struct cachetemp *c, long long i, void** recv, unsigned flags); 
-	void (*flush)(struct cachetemp *c); 
+	void (*put)(struct cachetemp *c, abstractPointer p, void* send, unsigned flags); 
+	void (*get)(struct cachetemp *c, abstractPointer p, void** recv, unsigned flags); 
+	void (*flush)(struct cachetemp *c);
+	void (*clear)(struct cachetemp *c);
 	void* real_cache;
 	void* real_array;
 	cacheType type;
 	arrayType typeA;
 	
-} cache;
+} Cache;
 
-void cacheBoxFromArray1(cache* c, array1* a);
+void cacheBoxFromArray1(Cache* c, array1* a);
+void cacheBoxFromArray2(Cache* c, array2* a);
 
-void cacheFree(cache* c);
+void cacheFree(Cache* c);
 
-void cachePut_box(cache *c, long long i, void* send, unsigned flags);
-void cacheGet_box(cache *c, long long i, void** recv, unsigned flags);
-void cacheFlush_box(cache *c);
+void cachePut_box(Cache *c, abstractPointer p, void* send, unsigned flags);
+void cacheGet_box(Cache *c, abstractPointer p, void** recv, unsigned flags);
+void cacheFlush_box(Cache *c);
+void cacheClear_box(Cache *c);
+
+void cacheFence(Cache *c);
 
 #endif

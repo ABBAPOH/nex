@@ -280,6 +280,61 @@ void testfgrid3C(fgrid3 * fg3, fgrid3 * slfg3)
 	MPI_Barrier(fg3->comm);
 }
 
+void testfgridnA()
+{
+	fgridn* g = malloc(sizeof(fgridn));
+	fgridn* sg = malloc(sizeof(fgridn));
+	
+	int sizes[] = {2, 4};
+	int dimsCount = 2;
+	int i;
+	
+	int index1[] = {0,0};
+	int index2[] = {1,0};
+	int index3[] = {0,1};
+	int index4[] = {1,3};
+	int steps[] = {1, 2};
+	
+	int steps1[] = {1,1};
+	int steps2[] = {1,2,1};
+	int* stepsA[] = {steps1, steps2};
+	int stepSizes[] = {2,3};
+	
+	fgridnFromRange(g, MPI_COMM_WORLD, dimsCount, sizes, (int(*)(int*, fgridn *)) (fgridn_native), (void(*)(fgridn *)) (fgridn_reverse));
+	//fgridnSlice(g, sg, 0, 1);
+	//fgridnSliceLinear(g, sg, steps);
+	fgridnSliceParts(g, sg, stepsA, stepSizes);
+	
+	if(g->id == 0)
+	{
+		printf("rank=%d  |  index(%d,%d) = %d\n", rank, index1[0], index1[1], g->map(index1, g));
+		printf("rank=%d  |  index(%d,%d) = %d\n", rank, index2[0], index2[1], g->map(index2, g));
+		printf("rank=%d  |  index(%d,%d) = %d\n", rank, index3[0], index3[1], g->map(index3, g));
+		printf("rank=%d  |  index(%d,%d) = %d\n", rank, index4[0], index4[1], g->map(index4, g));
+	}
+	
+	fgridnBarrierSubMask(g, 0);
+	
+	int mask = 2;
+	printf("rank=%2d  |  self(full-zero) = %2d   |  self(%d) = %2d\n", rank, g->subDimsSelf[0], mask, g->subDimsSelf[mask]);
+	fgridnCreateSubDimMask(g, mask);
+	printf(" rank=%2d  -> self(%d) = %2d\n", rank, mask, g->subDimsSelf[mask]);
+	
+	fgridnBarrierSubMask(g, 0);
+	
+	printf("  rank=%2d  |  self(full-zero) = %2d   |  sliced = %2d\n", rank, g->subDimsSelf[0], sg->subDimsSelf[0]);
+	
+	fgridnBarrierSubMask(g, 0);
+	
+	printf("   rank=%2d  |  coords = (%2d,%2d)   |  sliced = (%2d,%2d)\n", rank, g->index[0], g->index[1]
+		, sg->index[0], sg->index[1]);
+	
+	fgridnFree(sg);
+	free(sg);
+	fgridnFree(g);
+	free(g);
+}
+
 void testgrouping()
 {
 	MPI_Group ogroup;
@@ -427,6 +482,174 @@ void testboxB()
 	MPI_Barrier(MPI_COMM_WORLD);
 }
 
+void testcacheA(array1 *a)
+{
+	assert(a);
+	int i,magic=1000+a->id;
+	int *recv=NULL;
+	Cache *c = malloc(sizeof(Cache));
+	
+	((int*)(a->data))[0]=a->id;
+	((int*)(a->data))[1]=-1;
+	
+	cacheBoxFromArray1(c,a);
+	
+	if(a->id==0)printf("\n\ntestcacheA\n\n");
+	MPI_Barrier(a->comm);
+	
+	//void (*put)(struct cachetemp *c, long long i, void* send, unsigned flags);
+	//void (*get)(struct cachetemp *c, long long i, void** recv, unsigned flags);
+	
+	cacheFence(c);
+	c->put(c, newP1D(((a->id+1)%a->nodes) * a->thisSize + 1) ,&magic, F_INCACHE | F_COPYCACHE);
+	cacheFence(c);
+	magic+=2000;
+	c->put(c, newP1D(((a->id+1)%a->nodes) * a->thisSize + 1) ,&magic,  F_INCACHE | F_COPYCACHE);
+	c->flush(c);
+	
+	cacheFence(c);
+	
+	//array1Get(a,((a->id+1)%a->nodes) * a->thisSize  ,(void**) &recv);
+	c->get(c, newP1D(((a->id+1)%a->nodes) * a->thisSize), (void**) &recv, F_THROUGH | F_INCACHE | F_COPYCACHE);
+	cacheFence(c);
+	
+	printf("array1 (%d)  %d,%d,%d\n",a->id,((int*)(a->data))[0],((int*)(a->data))[1],*recv);
+	
+	cacheFree(c);
+	free(c);
+	
+	MPI_Barrier(a->comm);
+	
+}
+
+void testcacheB(array2 *a)
+{
+	assert(a);
+	
+	Cache *c = malloc(sizeof(Cache));
+	
+	((int*)(a->data))[0]=a->id;
+	((int*)(a->data))[1]=-1;
+	
+	cacheBoxFromArray2(c,a);
+	
+	if(a->id==0)printf("\n\ntestcacheB\n\n");
+	MPI_Barrier(a->comm);
+	
+	//void (*put)(struct cachetemp *c, long long i, void* send, unsigned flags);
+	//void (*get)(struct cachetemp *c, long long i, void** recv, unsigned flags);
+	
+	int magic=a->id;
+	int* recv=NULL;
+	
+	int xdif=1;
+	int ydif=1;
+	
+	//pointer p=a->map((a->thisStartX+xdif)%a->sizeX,        (a->thisStartY+ydif)%a->sizeY,  a);
+	
+	cacheFence(c);
+	c->put(c, newP2D((a->thisStartX+xdif)%a->sizeX,        (a->thisStartY+ydif)%a->sizeY), &magic, F_INCACHE | F_COPYCACHE);
+	//c->flush(c);
+	cacheFence(c);
+	c->get(c, newP2D((a->thisStartX+xdif)%a->sizeX,        (a->thisStartY+ydif)%a->sizeY), (void**)&recv, F_COPYCACHE);
+	cacheFence(c);
+	
+	printf("array2   put=%d get=%d\n",a->id,*recv);
+	
+	free(recv);
+	
+	
+	cacheFree(c);
+	free(c);
+	
+	MPI_Barrier(a->comm);
+	
+}
+
+void taskFunc_my(int taskIndex, void *data, void **result, int *resultSize)
+{
+	(*result)=malloc(sizeof(int));
+	(*resultSize)=sizeof(int);
+	int temp = *((int*)data);
+	printf("taskFunc_my  :  taskIndex=%d data=%d\n", taskIndex, temp);
+	(**((int**)result))=taskIndex + temp;
+	
+}
+
+void taskFunc_my2(int taskIndex, void *data, void **result, int *resultSize)
+{
+	(*result)=malloc(sizeof(int));
+	(*resultSize)=sizeof(int);
+	int temp = *((int*)data);
+	printf("taskFunc_my2  :  taskIndex=%d data=%d\n", taskIndex, temp);
+	(**((int**)result))=taskIndex - 2*temp;
+	
+}
+
+void testtasksA(Tasks *t)
+{
+	assert(t);
+	
+	//2-groups 5-tasks
+	if(rank==0)printf("\n\ntesttasksA\n\n");
+	MPI_Barrier(MPI_COMM_WORLD);
+	
+	int gr1 = tasksAddGroup(t, &taskFunc_my);
+	int gr2 = tasksAddGroup(t, &taskFunc_my2);
+	
+	int *(datas[5]);
+	int i;
+	for(i=0; i<5;i++)
+	{
+		datas[i]=malloc(sizeof(int));
+		*(datas[i])=i;
+	}
+	
+	int taskIndexes[5];
+	
+	
+	for(i=0;i<5;i++)
+		taskIndexes[i]=tasksAddTask(t,datas[i], (i<2)?gr1:gr2, 1, 1);
+	
+	tasksAddTaskDep(t,taskIndexes[0],taskIndexes[4]);
+	tasksAddTaskDep(t,taskIndexes[1],taskIndexes[4]);
+	tasksAddGroupDep(t,taskIndexes[1],gr2);
+	
+	MPI_Barrier(MPI_COMM_WORLD);
+	
+	printf("Ready-Map ");
+	for(i=0; i<5; i++)
+		printf(" %d", tasksIsReady(t,taskIndexes[i]));
+	printf("\n");
+	
+	for(i=0;i<2;i++)
+		tasksRun(t,taskIndexes[i]);
+	//tasksRunMany(t, taskIndexes, 5);
+	
+	int results[5];
+	for(i=0;i<5;i++)
+		results[i]=*((int*)(t->tasks[i].result));
+	
+	MPI_Barrier(MPI_COMM_WORLD);
+	
+	printf("tasks   gr1=%d(%d/%d) gr2=%d(%d/%d) :",gr1, t->groups[gr1].finished, t->groups[gr1].size,gr2, t->groups[gr2].finished, t->groups[gr2].size);
+	
+	for(i=0;i<5;i++)
+		printf(" %d",results[i]);
+	
+	printf("\n");
+	
+	/*int *members, memsize;
+	printf("members of %d : ", gr2);
+	memsize = tasksGetGroupMembers(t, gr2, &members);
+	for(i=0;i<memsize;i++)
+		printf(" %d",members[i]);
+	printf("\n");*/
+	
+	MPI_Barrier(MPI_COMM_WORLD);
+	
+}
+
 int main(int argc, char **argv)
 {
 	int snd,rcv;
@@ -453,8 +676,9 @@ int main(int argc, char **argv)
 	array1 ar;
 	array2 ar2;
 	array21 ar21;
-	cache c;
+	//Cache c;
 	
+	Tasks tasks;
 	
 	if(init(&argc,&argv))
 		return 1;
@@ -485,7 +709,8 @@ int main(int argc, char **argv)
 	array1FromRange(&ar, MPI_COMM_WORLD, 16, sizeof(int));
 	array2FromRange(&ar2, MPI_COMM_WORLD, 8, 4, sizeof(int));
 	array21FromArray1(&ar21, &ar, 4, 4);
-	cacheBoxFromArray1(&c, &ar);
+	//cacheBoxFromArray1(&c, &ar);
+	tasksFromNative(&tasks, 2, 5);
 	
 	treecast=(rank)%(nativeX*nativeY);
 	
@@ -506,26 +731,30 @@ int main(int argc, char **argv)
 	
 	MPI_Barrier(MPI_COMM_WORLD);
 	
-	testntreeA(&t3);
-	testfgrid2A(&fg, &sllfg);
-	testfgrid2A(&fg, &slpfg);
+	//testntreeA(&t3);
+	//testfgrid2A(&fg, &sllfg);
+	//testfgrid2A(&fg, &slpfg);
 	
 	//testfgrid3A();
-	testfgrid3B(&fg3);
-	testfgrid3C(&fg3, &slfg3);
-	testfgrid3C(&fg3, &sllfg3);
-	testfgrid3C(&fg3, &slpfg3);
+	//testfgrid3B(&fg3);
+	//testfgrid3C(&fg3, &slfg3);
+	//testfgrid3C(&fg3, &sllfg3);
+	//testfgrid3C(&fg3, &slpfg3);
+	testfgridnA();
 	MPI_Barrier(MPI_COMM_WORLD);
 	
-	testmdaA();
-	testarray1A(&ar);
-	testarray2A(&ar2);
-	testarray21A(&ar21);
+	//testmdaA();
+	//testarray1A(&ar);
+	//testcacheA(&ar);
+	//testarray2A(&ar2);
+	//testcacheB(&ar2);
+	//testarray21A(&ar21);
 	
 	//testboxA();//be careful: this test req ~1.5 gig of ram
-	testboxB();
+	//testboxB();
 	
 	//testgrouping();
+	//testtasksA(&tasks);
 	
 	MPI_Barrier(MPI_COMM_WORLD);
 	
@@ -548,7 +777,8 @@ int main(int argc, char **argv)
 	array1Free(&ar);
 	array2Free(&ar2);
 	array21Free(&ar21);
-	cacheFree(&c);
+	//cacheFree(&c);
+	tasksFree(&tasks);
 	
 	MPI_Finalize();
 	return 0;

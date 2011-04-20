@@ -9,7 +9,7 @@
 #include <math.h>
 #include <mpi.h>
 
-typedef enum {Tnone=0,Tgrid2,Tfgrid2,Tfgrid3,Tntree} topoType;
+typedef enum {Tnone=0,Tgrid2,Tfgrid2,Tfgrid3,Tfgridn,Tntree} topoType;
 typedef struct {topoType type; void* obj;} Topo;
 
 int nativeX,nativeY,X,Y;
