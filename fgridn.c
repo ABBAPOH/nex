@@ -30,6 +30,27 @@ void fgridnCreateSubDimMask(fgridn * g, unsigned int dims)
 	MPI_Comm_rank(g->subDims[dims], &(g->subDimsSelf[dims]));
 }
 
+void fgridnMkIndexString(fgridn * g)
+{
+	assert(g);
+	
+	if(g->indexString != NULL)
+		return;
+	
+	int i;
+	int offset = 1;
+	g->indexString = malloc(sizeof(char) * 30);
+	g->indexString[0] = '(';
+	for(i=0; i<g->dimsCount; i++)
+	{
+		offset += sprintf(g->indexString + offset, "%2d", g->index[i]);
+		if(i != g->dimsCount - 1)
+			offset += sprintf(g->indexString + offset, ",", g->index[i]);
+		else
+			offset += sprintf(g->indexString + offset, ")");
+	}
+}
+
 int fgridn_native(int* index, fgridn *g)
 {
 	assert(index);
@@ -76,8 +97,8 @@ void fgridnFromRange(fgridn * g, MPI_Comm comm, int dimsCount, int* sizes, int(*
 	int i;
 	g->totalSize = 1;
 	g->dimsCount = dimsCount;
-	g->sizes = malloc(sizeof(int) * dimsCount);
-	for(i=0; i<dimsCount; i++)
+	g->sizes = malloc(sizeof(int) * g->dimsCount);
+	for(i=0; i<g->dimsCount; i++)
 	{
 		assert(sizes[i]>0);
 		g->totalSize *= sizes[i];
@@ -92,14 +113,21 @@ void fgridnFromRange(fgridn * g, MPI_Comm comm, int dimsCount, int* sizes, int(*
 	MPI_Comm_dup(comm, &(g->comm));
 	MPI_Comm_rank(g->comm, &(g->id));
 
-	g->topo.obj=NULL;
-	g->topo.type=Tnone;
+	g->topology.obj=NULL;
+	g->topology.type=Tnone;
 
 	g->reverse=reverse;
 	g->reverse(g);
 	g->map=map;
 	
-	g->subdimsCount = 1<<(dimsCount);
+	g->indexString = NULL;
+	fgridnMkIndexString(g);//not needed
+	
+	g->dimsMask = 0;
+	for(i = 0; i < (g->dimsCount); i++)
+		g->dimsMask = g->dimsMask | (1<<i); 
+	
+	g->subdimsCount = 1<<(g->dimsCount);
 	g->subDims = malloc(sizeof(MPI_Comm) * g->subdimsCount);
 	g->subDimsSelf = malloc(sizeof(int) * g->subdimsCount);
 	for(i=0; i < g->subdimsCount; i++)
@@ -153,8 +181,8 @@ void fgridnSlice(fgridn * g,fgridn * ng, int dim, int sliceIndex)
 		ng->totalSize *= ng->sizes[i];
 	}
 	
-	ng->topo.obj = g;
-	ng->topo.type = Tfgridn;
+	ng->topology.obj = g;
+	ng->topology.type = Tfgridn;
 	
 	ng->reverse = g->reverse;
 	ng->reverse(ng);
@@ -171,6 +199,9 @@ void fgridnSlice(fgridn * g,fgridn * ng, int dim, int sliceIndex)
 		if(g->subDimsSelf[i] != -1)
 			fgridnCreateSubDimMask(ng, i);
 	}
+	
+	if(g->indexString != NULL)
+		fgridnMkIndexString(ng);
 }
 
 void fgridnSliceLinear(fgridn * g,fgridn * ng, int* sliceSteps)
@@ -204,8 +235,8 @@ void fgridnSliceLinear(fgridn * g,fgridn * ng, int* sliceSteps)
 	MPI_Comm_split(g->comm, flag, 0, &(ng->comm));
 	MPI_Comm_rank(ng->comm, &(ng->id));
 	
-	ng->topo.obj=g;
-	ng->topo.type=Tfgridn;
+	ng->topology.obj=g;
+	ng->topology.type=Tfgridn;
 	
 	ng->reverse = g->reverse;
 	ng->reverse(ng);
@@ -221,6 +252,9 @@ void fgridnSliceLinear(fgridn * g,fgridn * ng, int* sliceSteps)
 		if(g->subDimsSelf[i] != -1)
 			fgridnCreateSubDimMask(ng, i);
 	}
+	
+	if(g->indexString != NULL)
+		fgridnMkIndexString(ng);
 }
 
 void fgridnSliceParts(fgridn * g, fgridn * ng, int** parts, int* size)
@@ -266,7 +300,6 @@ void fgridnSliceParts(fgridn * g, fgridn * ng, int** parts, int* size)
 	int d = 1;
 	for(i=0; i < g->dimsCount; i++)
 	{
-		
 		resultColor += colors[i]*d;
 		d *= size[i];
 		
@@ -277,8 +310,8 @@ void fgridnSliceParts(fgridn * g, fgridn * ng, int** parts, int* size)
 	MPI_Comm_split(g->comm, resultColor, 0, &(ng->comm));
 	MPI_Comm_rank(ng->comm,&(ng->id));
 	
-	ng->topo.obj=g;
-	ng->topo.type=Tfgridn;
+	ng->topology.obj=g;
+	ng->topology.type=Tfgridn;
 	
 	ng->reverse=g->reverse;
 	ng->reverse(ng);
@@ -294,6 +327,9 @@ void fgridnSliceParts(fgridn * g, fgridn * ng, int** parts, int* size)
 		if(g->subDimsSelf[i] != -1)
 			fgridnCreateSubDimMask(ng, i);
 	}
+	
+	if(g->indexString != NULL)
+		fgridnMkIndexString(ng);
 	
 	free(colors);
 }
@@ -320,8 +356,8 @@ void fgridnDivide(fgridn * g,fgridn * ng, int dim, int divideStep)
 	MPI_Comm_dup(g->comm, &(ng->comm));
 	MPI_Comm_rank(ng->comm, &(ng->id));
 	
-	ng->topo.obj=g;
-	ng->topo.type=Tfgridn;
+	ng->topology.obj=g;
+	ng->topology.type=Tfgridn;
 	
 	ng->reverse = g->reverse;
 	ng->reverse(ng);
@@ -337,6 +373,9 @@ void fgridnDivide(fgridn * g,fgridn * ng, int dim, int divideStep)
 		if((i < g->subdimsCount) && (g->subDimsSelf[i] != -1))
 			fgridnCreateSubDimMask(ng, i);
 	}
+	
+	if(g->indexString != NULL)
+		fgridnMkIndexString(ng);
 }
 
 void fgridnFree(fgridn * g)
@@ -353,21 +392,27 @@ void fgridnFree(fgridn * g)
 		}
 	
 	g->id = -1;
+	g->dimsMask = 0;
 	free(g->sizes);
-	g->sizes = 0;
+	g->sizes = NULL;
 	g->totalSize = -1;
 	free(g->index);
-	g->index = 0;
+	g->index = NULL;
+	
+	if(g->indexString != NULL)
+	{
+		free(g->indexString);
+		g->indexString = NULL;
+	}
 	
 	g->map = NULL;
 	g->reverse = NULL;
 	
-	g->topo.type = Tnone;
-	g->topo.obj = NULL;
+	g->topology.type = Tnone;
+	g->topology.obj = NULL;
 	
 	MPI_Comm_free(&(g->comm));
 }
-
 
 void fgridnBarrier(fgridn * g)
 {

@@ -11,10 +11,10 @@ void ntreeFromNative(ntree * t)
 {
 	assert(t);
 	
-	ntreeFromRange(t,MPI_COMM_WORLD,0,NULL);
+	ntreeFromRange(t, MPI_COMM_WORLD, 0, NULL);
 	
-	t->topo.type=Tnone;
-	t->topo.obj=NULL;
+	t->topo.type = Tnone;
+	t->topo.obj = NULL;
 }
 
 /*!
@@ -30,18 +30,18 @@ void ntreeFromRange(ntree * t, MPI_Comm comm, int pid, ntree * parent)
 	int i;
 
 	MPI_Comm_dup(comm, &(t->comm));
-	MPI_Comm_rank(t->comm,&(t->id));
-	t->pid=pid;
-	t->parent=parent;
+	MPI_Comm_rank(t->comm, &(t->id));
+	t->pid = pid;
+	t->parent = parent;
 
-	MPI_Comm_size(t->comm,&(t->num));
+	MPI_Comm_size(t->comm, &(t->num));
 
 	/*t->nodes=malloc(sizeof(int) * t->num);
 	for(i=0;i<t->num;i++)
 		t->nodes[i]=i;*/
 
-	t->topo.type=Tnone;
-	t->topo.obj=NULL;
+	t->topo.type = Tnone;
+	t->topo.obj = NULL;
 
 }
 
@@ -55,18 +55,18 @@ void ntreeFromfgrid2(ntree * t, fgrid2* fg)
 {
 	assert(t);
 	assert(fg);
-	ntree * pt=NULL;
+	ntree * pt = NULL;
 	if(fg->y==0)
 	{
-		pt=malloc(sizeof(ntree));
-		ntreeFromRange(pt,fg->yLine,0,NULL);
-		pt->topo.type=Tfgrid2;
-		pt->topo.obj=fg;
+		pt = malloc(sizeof(ntree));
+		ntreeFromRange(pt, fg->yLine, 0, NULL);
+		pt->topo.type = Tfgrid2;
+		pt->topo.obj = fg;
 	}
 
-	ntreeFromRange(t,fg->xLine,0,pt);
-	t->topo.type=Tfgrid2;
-	t->topo.obj=fg;
+	ntreeFromRange(t, fg->xLine, 0, pt);
+	t->topo.type = Tfgrid2;
+	t->topo.obj = fg;
 }
 
 /*!
@@ -75,25 +75,25 @@ void ntreeFromfgrid2(ntree * t, fgrid2* fg)
 
   Создается двухуровневое дерево, в первый уровень входит первый строка (X == 0), а на нижнем уровне - все столбцы.
 */
-void ntreeFromfgrid2Trans(ntree * t,fgrid2* fg)
+void ntreeFromfgrid2Trans(ntree * t, fgrid2* fg)
 {
 	assert(t);
 	assert(fg);
 	
-	ntree * pt=NULL;
+	ntree * pt = NULL;
 	if(fg->x==0)
 	{
-		pt=malloc(sizeof(ntree));
+		pt = malloc(sizeof(ntree));
 		
-		ntreeFromRange(pt,fg->xLine,0,NULL);
-		pt->topo.type=Tfgrid2;
-		pt->topo.obj=fg;
+		ntreeFromRange(pt, fg->xLine, 0, NULL);
+		pt->topo.type = Tfgrid2;
+		pt->topo.obj = fg;
 	}
 	
-	ntreeFromRange(t,fg->yLine,0,pt);
+	ntreeFromRange(t, fg->yLine, 0, pt);
 	
-	t->topo.type=Tfgrid2;
-	t->topo.obj=fg;
+	t->topo.type = Tfgrid2;
+	t->topo.obj = fg;
 	
 }
 
@@ -109,7 +109,7 @@ void ntreeFromfgrid2Param(ntree * t, fgrid2* fg, int orient, int toproot, int bo
 {
 	assert(t);
 	assert(fg);
-	ntree * pt=NULL;
+	ntree * pt = NULL;
 	
 	//top bottom work
 	if(!orient)
@@ -117,28 +117,28 @@ void ntreeFromfgrid2Param(ntree * t, fgrid2* fg, int orient, int toproot, int bo
 		if(fg->y==bottomroot)
 		{
 			pt=malloc(sizeof(ntree));
-			ntreeFromRange(pt,fg->yLine,toproot,NULL);
-			pt->topo.type=Tfgrid2;
-			pt->topo.obj=fg;
+			ntreeFromRange(pt, fg->yLine, toproot, NULL);
+			pt->topo.type = Tfgrid2;
+			pt->topo.obj = fg;
 		}
 		
-		ntreeFromRange(t,fg->xLine,bottomroot,pt);
+		ntreeFromRange(t, fg->xLine, bottomroot, pt);
 	}
 	else
 	{
 		if(fg->x==bottomroot)
 		{
 			pt=malloc(sizeof(ntree));
-			ntreeFromRange(pt,fg->xLine,toproot,NULL);
-			pt->topo.type=Tfgrid2;
-			pt->topo.obj=fg;
+			ntreeFromRange(pt, fg->xLine, toproot, NULL);
+			pt->topo.type = Tfgrid2;
+			pt->topo.obj = fg;
 		}
 		
-		ntreeFromRange(t,fg->yLine,bottomroot,pt);
+		ntreeFromRange(t, fg->yLine, bottomroot, pt);
 	}
 	
-	t->topo.type=Tfgrid2;
-	t->topo.obj=fg;
+	t->topo.type = Tfgrid2;
+	t->topo.obj = fg;
 }
 
 /*!
@@ -153,28 +153,82 @@ void ntreeFromfgrid3(ntree * t, fgrid3* fg)
 {
 	assert(t);
 	assert(fg);
-	ntree * pt=NULL;
-	ntree * ppt=NULL;
+	ntree * pt = NULL;
+	ntree * ppt = NULL;
 	
 	if((fg->y==0) && (fg->z==0))
 	{
-		ppt=malloc(sizeof(ntree));
-		ntreeFromRange(ppt,fg->yzLine,0,NULL);
-		ppt->topo.type=Tfgrid3;
-		ppt->topo.obj=fg;
+		ppt = malloc(sizeof(ntree));
+		ntreeFromRange(ppt, fg->yzLine, 0, NULL);
+		ppt->topo.type = Tfgrid3;
+		ppt->topo.obj = fg;
 	}
 	
 	if(fg->z==0)
 	{
-		pt=malloc(sizeof(ntree));
-		ntreeFromRange(pt,fg->xzLine,0,ppt);
-		pt->topo.type=Tfgrid3;
-		pt->topo.obj=fg;
+		pt = malloc(sizeof(ntree));
+		ntreeFromRange(pt, fg->xzLine, 0, ppt);
+		pt->topo.type = Tfgrid3;
+		pt->topo.obj = fg;
 	}
 	
-	ntreeFromRange(t,fg->xyLine,0,pt);
-	t->topo.type=Tfgrid3;
-	t->topo.obj=fg;
+	ntreeFromRange(t, fg->xyLine, 0, pt);
+	t->topo.type = Tfgrid3;
+	t->topo.obj = fg;
+}
+
+void ntreeFromfgridn(ntree* t, fgridn* fg, unsigned int dims[], int dimRoots[], int dimCount)
+{
+	assert(t);
+	assert(fg);
+	assert(dims);
+	assert(dimRoots);
+	assert(dimCount > 0);
+	
+	int i;
+	ntree * temp = NULL;
+	ntree * parent = NULL;
+	
+	unsigned int* inversedDims = malloc(sizeof(unsigned int) * dimCount);
+	unsigned int fullMask = 0;
+	
+	for(i=0; i<dimCount; i++)
+	{
+		inversedDims[i] = fg->dimsMask ^ dims[i];
+		if(fg->subDimsSelf[inversedDims[i]] == -1)
+		{
+			fgridnCreateSubDimMask(fg, inversedDims[i]); //mb repirt error instead
+		}
+	}
+	
+	int* isLevelRoot = malloc(sizeof(int) * dimCount);
+	int flag = 1;
+	for(i=dimCount-1; i>=0; i--)
+	{
+		isLevelRoot[i] = flag && (fg->subDimsSelf[inversedDims[i]] == dimRoots[i]);
+		flag = isLevelRoot[i];
+		int num;
+		MPI_Comm_size(fg->subDims[inversedDims[i]], &num);
+		//printf("%2d %s\tisLevelRoot[%2d] = %2d\t%2d ? %2d\t num = %2d\n", fg->id, fg->indexString, i, isLevelRoot[i], fg->subDimsSelf[inversedDims[i]], dimRoots[i], num);
+	}
+	
+	for(i=1; i<dimCount; i++)
+	{
+		if(!isLevelRoot[i])
+			continue;
+		
+		temp = malloc(sizeof(ntree));
+		ntreeFromRange(temp, fg->subDims[inversedDims[i-1]], dimRoots[i-1], parent);
+		temp->topo.type = Tfgridn;
+		temp->topo.obj = fg;
+		parent = temp;
+	}
+	
+	ntreeFromRange(t, fg->subDims[inversedDims[dimCount-1]], dimRoots[dimCount-1], parent);
+	t->topo.type = Tfgridn;
+	t->topo.obj = fg;
+	
+	free(isLevelRoot);
 }
 
 /*!
@@ -191,11 +245,11 @@ void ntreeFree(ntree * t)
 		free(t->parent);
 	}
 	MPI_Comm_free(&(t->comm));
-	t->id=-1;
-	t->pid=-1;
-	t->num=-1;
-	t->topo.type=Tnone;
-	t->topo.obj=NULL;
+	t->id = -1;
+	t->pid = -1;
+	t->num = -1;
+	t->topo.type = Tnone;
+	t->topo.obj = NULL;
 }
 
 /*!
@@ -216,7 +270,7 @@ void ntreeBCast(ntree * t, void* buffer, int count, MPI_Datatype datatype)
 	assert(count>0);
 	if((t->id==t->pid)&&(t->parent!=NULL))
 	{
-		ntreeBCast(t->parent,buffer,count,datatype);
+		ntreeBCast(t->parent, buffer, count, datatype);
 	}
 	MPI_Barrier(t->comm);
 	MPI_Bcast(buffer, count, datatype, t->pid, t->comm );
@@ -248,13 +302,13 @@ void ntreeReduce(ntree * t, void* sendbuf, void* recvbuf, int count, MPI_Datatyp
 	{
 		int dataTypeSize;
 		void* tempbuf;
-		MPI_Type_size(datatype,&dataTypeSize);
+		MPI_Type_size(datatype, &dataTypeSize);
 		MPI_Alloc_mem( count*dataTypeSize, MPI_INFO_NULL, &tempbuf );
 		
 		MPI_Reduce(sendbuf, tempbuf, count, datatype, op, t->pid, t->comm);
 		MPI_Barrier(t->comm);
 		//printf("MPI_Reduce called root\n");
-		ntreeReduce(t->parent,tempbuf,recvbuf,count,datatype,op);
+		ntreeReduce(t->parent, tempbuf, recvbuf, count, datatype, op);
 		MPI_Free_mem(tempbuf);
 	}
 	else
@@ -287,8 +341,8 @@ int ntreeGather(ntree * t, void *sendbuf, int sendcount, MPI_Datatype datatype, 
 	
 	int numNodes;
 	int dataTypeSize;
-	MPI_Type_size(datatype,&dataTypeSize);
-	MPI_Comm_size(t->comm,&numNodes);
+	MPI_Type_size(datatype, &dataTypeSize);
+	MPI_Comm_size(t->comm, &numNodes);
 	
 	if(t->id==t->pid)
 		*recvbuf=malloc(numNodes*sendcount*dataTypeSize);
@@ -298,10 +352,10 @@ int ntreeGather(ntree * t, void *sendbuf, int sendcount, MPI_Datatype datatype, 
 	//printf("here(%d)\n",t->id);
 	if((t->id==t->pid)&&(t->parent!=NULL))
 	{
-		void *oldrecvbuf=*recvbuf;
+		void *oldrecvbuf = *recvbuf;
 		int res;
 		
-		res = ntreeGather(t->parent,oldrecvbuf,numNodes*sendcount,datatype,recvbuf);
+		res = ntreeGather(t->parent, oldrecvbuf, numNodes*sendcount, datatype, recvbuf);
 		free(oldrecvbuf);
 		return res;
 	}
@@ -337,7 +391,7 @@ void ntreeScatter(ntree * t, void *sendbuf, int sendcount, MPI_Datatype datatype
 	{
 		void *tempbuf=NULL;//=malloc(numNodes*sendcount * dataTypeSize);
 		MPI_Alloc_mem( numNodes*sendcount * dataTypeSize, MPI_INFO_NULL, &tempbuf );
-		ntreeScatter(t->parent,sendbuf,sendcount*numNodes,datatype,tempbuf);
+		ntreeScatter(t->parent, sendbuf, sendcount*numNodes, datatype, tempbuf);
 		MPI_Barrier(t->comm);
 		MPI_Scatter(tempbuf, sendcount, datatype, recvbuf, sendcount, datatype, t->pid, t->comm);
 		MPI_Free_mem(tempbuf);
@@ -359,7 +413,7 @@ int ntreeIsMegaRoot(ntree * t)
 {
 	assert(t);
 	while(t->parent!=NULL)
-		t=t->parent;
+		t = t->parent;
 	return t->id==t->pid;
 }
 

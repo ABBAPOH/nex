@@ -13,17 +13,20 @@ typedef struct fgridntemp
 	int* index;
 	int* sizes;
 	int totalSize;
+	char* indexString;//for debug
 	
 	MPI_Comm* subDims;
 	int* subDimsSelf;
 	int subdimsCount;
+	unsigned int dimsMask;
 	
-	Topo topo;
+	Topo topology;
 	
 } fgridn;
 
 void fgridnCreateSubDim(fgridn * g, int* dims);
 void fgridnCreateSubDimMask(fgridn * g, unsigned int dims);
+void fgridnMkIndexString(fgridn * g);
 
 int fgridn_native(int* index, fgridn *fg);
 void fgridn_reverse(fgridn *g);

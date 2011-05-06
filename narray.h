@@ -28,6 +28,35 @@ typedef struct narray1temp
 	Topo topo;
 } narray1;
 
+typedef struct datachunktemp 
+{
+	
+	
+} dataChunk;
+
+typedef struct narraytemp 
+{
+	npointer (*map)(int i, struct narray1temp *g); 
+	void(*alloc)(struct narray1temp *g); 
+	int id; 
+	MPI_Comm comm; 
+	 
+	int blockSize; 
+	int nodes;
+	
+	int objSize;
+	int* sizes;
+	int totalSize;
+	int dimsCount;
+	
+	
+	
+	int thisSize;
+	BoxHeader box; 
+	MPI_Win win; 
+	Topo topo;
+} narray;
+
 npointer narray1_map(int i, narray1 *na);
 void narray1_alloc(narray1 *na);
 
