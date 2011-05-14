@@ -40,13 +40,17 @@ typedef struct narraytemp
 
 npointer narray_map(int index[], narray* na);
 void narray_alloc(narray* na);
+void printNPointer(npointer p);
 
 void narrayFromRange(narray *na, Topology topo, int sizes[], int dimsCount, int objSize, npointer (*map)(int[], narray*), void (*alloc)(narray*));
 void narrayFree(narray *na);
 
 void narrayPut(narray* na, int index[], void* send);
+void narrayPutLine(narray* na, int index[], void* send, int size);
 void narrayGet(narray* na, int index[], void** recv);
+void narrayGetLine(narray* na, int index[], void** recv, int size);
 void narrayGetInBuffer(narray* na, int index[], void* recv);
+void narrayGetLineInBuffer(narray* na, int index[], void* recv, int size);
 void narrayFence(narray* na);
 void narrayBarrier(narray* na);
 #endif

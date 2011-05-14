@@ -46,6 +46,11 @@ void narray_alloc_example(narray* na)
 	//here goes calculation of index
 }
 
+void printNPointer(npointer p)
+{
+	printf("pointer: comm = %d id = %2d offset = %3d\n", p.comm, p.id, p.offset);
+}
+
 void narrayFromRange(narray* na, Topology topo, int sizes[], int dimsCount, int objSize, npointer (*map)(int[], narray*), void (*alloc)(narray*))
 {
 	assert(na);
@@ -155,6 +160,66 @@ void narrayPut(narray* na, int index[], void* send)
 	MPI_Put(send, na->objSize, MPI_CHAR, p.id, p.offset, na->objSize, MPI_CHAR, na->win);
 }
 
+void narrayPutLine(narray* na, int index[], void* send, int size)
+{
+	assert(na);
+	assert(send);
+	assert(index);
+	assert(size > 0);
+	assert(size <= na->sizes[na->dimsCount - 1]);
+	
+	int* index2 = malloc(sizeof(int) * na->dimsCount);
+	
+	int i;
+	
+	for(i=0; i<na->dimsCount; i++)
+		index2[i] = index[i];
+	index2[na->dimsCount - 1] = index[na->dimsCount - 1] + (size - 1);
+	
+	npointer p1 = na->map(index, na);
+	npointer p2 = na->map(index2, na);
+	
+	//printf("%d %d\n", index[0], index[1]);
+	//printf("->%d %d\n", index2[0], index2[1]);
+	
+	//printNPointer(p1);
+	//printNPointer(p2);
+	
+	if(p1.id == p2.id)
+		MPI_Put(send, na->objSize * size, MPI_CHAR, p1.id, p1.offset, na->objSize * size, MPI_CHAR, na->win);
+	else
+	{
+		printf("extended put\n");
+		
+		int sndOffset = 0;
+		int sndLength = 1;
+		
+		for(i=1; i<size; i++)
+		{
+			index2[na->dimsCount - 1] = index[na->dimsCount - 1] + i;
+			p2 = na->map(index2, na);
+			if(p1.id == p2.id)
+			{
+				sndLength++;
+			}
+			else
+			{
+				MPI_Put(send + sndOffset * na->objSize, na->objSize * sndLength, MPI_CHAR, p1.id, p1.offset, na->objSize * sndLength, 	MPI_CHAR, na->win);
+				//printf("send %d elems with offset = %d to %d:%d\n", sndLength, sndOffset, p1.id, p1.offset);
+				p1 = na->map(index2, na);
+				sndOffset += sndLength;
+				sndLength = 1;
+				
+			}
+		}
+		
+		MPI_Put(send + sndOffset * na->objSize, na->objSize * sndLength, MPI_CHAR, p1.id, p1.offset, na->objSize * sndLength, MPI_CHAR, na->win);
+		//printf("send %d elems with offset = %d to %d:%d\n", sndLength, sndOffset, p1.id, p1.offset);
+	}
+	
+	free(index2);
+}
+
 void narrayGet(narray* na, int index[], void** recv)
 {
 	assert(na);
@@ -166,6 +231,72 @@ void narrayGet(narray* na, int index[], void** recv)
 	MPI_Get(*recv, na->objSize, MPI_CHAR, p.id, p.offset, na->objSize, MPI_CHAR, na->win);
 }
 
+void narrayGetLine(narray* na, int index[], void** recv, int size)
+{
+	/*assert(na);
+	assert(recv);
+	assert(index);
+	assert(size > 0);
+	assert(size <= na->sizes[na->dimsCount - 1]);
+	
+	int* index2 = malloc(sizeof(int) * na->dimsCount);
+	int i;
+	
+	for(i=0; i<na->dimsCount; i++)
+		index2[i] = index[i];
+	index2[na->dimsCount - 1] = index[na->dimsCount - 1] + (size - 1);
+	
+	*recv = malloc(na->objSize * size);
+	
+	npointer p1 = na->map(index, na);
+	npointer p2 = na->map(index2, na);
+	
+	if(p1.id == p2.id)
+	{
+		MPI_Get(*recv, na->objSize * size, MPI_CHAR, p1.id, p1.offset, na->objSize * size, MPI_CHAR, na->win);
+	}
+	else
+	{
+		printf("extended get\n");
+		
+		int sndOffset = 0;
+		int sndLength = 1;
+		
+		for(i=1; i<size; i++)
+		{
+			index2[na->dimsCount - 1] = index[na->dimsCount - 1] + i;
+			p2 = na->map(index2, na);
+			if(p1.id == p2.id)
+			{
+				sndLength++;
+			}
+			else
+			{
+				MPI_Get(*recv + sndOffset * na->objSize, na->objSize * sndLength, MPI_CHAR, p1.id, p1.offset, na->objSize * sndLength, 	MPI_CHAR, na->win);
+				//printf("got %d elems with offset = %d to %d:%d\n", sndLength, sndOffset, p1.id, p1.offset);
+				p1 = na->map(index2, na);
+				sndOffset += sndLength;
+				sndLength = 1;
+				
+			}
+		}
+		
+		MPI_Get(*recv + sndOffset * na->objSize, na->objSize * sndLength, MPI_CHAR, p1.id, p1.offset, na->objSize * sndLength, 	MPI_CHAR, na->win);
+		//printf("got %d elems with offset = %d to %d:%d\n", sndLength, sndOffset, p1.id, p1.offset);
+	}
+	
+	free(index2);*/
+	
+	assert(na);
+	assert(recv);
+	assert(index);
+	assert(size > 0);
+	assert(size <= na->sizes[na->dimsCount - 1]);
+	
+	*recv = malloc(na->objSize * size);
+	narrayGetLineInBuffer(na, index, *recv, size);
+}
+
 void narrayGetInBuffer(narray* na, int index[], void* recv)
 {
 	assert(na);
@@ -173,6 +304,63 @@ void narrayGetInBuffer(narray* na, int index[], void* recv)
 	
 	npointer p = na->map(index, na);
 	MPI_Get(recv, na->objSize, MPI_CHAR, p.id, p.offset, na->objSize, MPI_CHAR, na->win);
+}
+
+void narrayGetLineInBuffer(narray* na, int index[], void* recv, int size)
+{
+	assert(na);
+	assert(recv);
+	assert(index);
+	assert(size > 0);
+	assert(size <= na->sizes[na->dimsCount - 1]);
+	
+	int* index2 = malloc(sizeof(int) * na->dimsCount);
+	int i;
+	
+	for(i=0; i<na->dimsCount; i++)
+		index2[i] = index[i];
+	index2[na->dimsCount - 1] = index[na->dimsCount - 1] + (size - 1);
+	
+	npointer p1 = na->map(index, na);
+	npointer p2 = na->map(index2, na);
+	
+	if(p1.id == p2.id)
+	{
+		MPI_Get(recv, na->objSize * size, MPI_CHAR, p1.id, p1.offset, na->objSize * size, MPI_CHAR, na->win);
+	}
+	else
+	{
+		printf("extended get\n");
+		
+		int sndOffset = 0;
+		int sndLength = 1;
+		
+		for(i=1; i<size; i++)
+		{
+			index2[na->dimsCount - 1] = index[na->dimsCount - 1] + i;
+			p2 = na->map(index2, na);
+			
+			
+			if(p1.id == p2.id)
+			{
+				sndLength++;
+			}
+			else
+			{
+				MPI_Get(recv + sndOffset * na->objSize, na->objSize * sndLength, MPI_CHAR, p1.id, p1.offset, na->objSize * sndLength, 	MPI_CHAR, na->win);
+				//printf("got %d elems with offset = %d from %d:%d\n", sndLength, sndOffset, p1.id, p1.offset);
+				p1 = na->map(index2, na);
+				sndOffset += sndLength;
+				sndLength = 1;
+				
+			}
+		}
+		
+		MPI_Get(recv + sndOffset * na->objSize, na->objSize * sndLength, MPI_CHAR, p1.id, p1.offset, na->objSize * sndLength, 	MPI_CHAR, na->win);
+		//printf("got %d elems with offset = %d from %d:%d\n", sndLength, sndOffset, p1.id, p1.offset);
+	}
+	
+	free(index2);
 }
 
 void narrayFence(narray* na)
