@@ -146,6 +146,14 @@ void fgridnFromNative(fgridn * g)
 	fgridnFromRange(g, MPI_COMM_WORLD, 1, &numNodes, (int(*)(int*, fgridn *)) (fgridn_native), (void(*)(fgridn *)) (fgridn_reverse));
 }
 
+Topology fgridnGetTopology(fgridn * g)
+{
+	assert(g);
+	Topology topo;
+	topo.obj = g;
+	topo.type = Tfgridn;
+	return topo;
+}
 
 void fgridnSlice(fgridn * g,fgridn * ng, int dim, int sliceIndex)
 {

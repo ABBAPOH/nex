@@ -35,7 +35,7 @@ typedef struct fgrid3temp
 	int yzLineSelf;
 	int xzLineSelf;
 	
-	Topo topo;
+	Topology topo;
 	
 } fgrid3;
 

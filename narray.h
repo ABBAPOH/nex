@@ -3,69 +3,54 @@
 
 #include "defs.h"
 #include "box.h"
+#include "fgridn.h"
+#include "fgrid3.h"
+#include "fgrid2.h"
+#include "grid2.h"
 
 typedef struct 
 {
 	MPI_Comm comm; 
 	int id;
-        unsigned index;
-	int bindex;
+        unsigned offset;
 } npointer;
-//win problem
-typedef struct narray1temp 
-{
-	npointer (*map)(int i, struct narray1temp *g); 
-	void(*alloc)(struct narray1temp *g); 
-	int id; 
-	MPI_Comm comm; 
-	int objSize; 
-	int blockSize; 
-	int nodes;
-	int size;
-	int thisSize;
-	BoxHeader box; 
-	MPI_Win win; 
-	Topo topo;
-} narray1;
-
-typedef struct datachunktemp 
-{
-	
-	
-} dataChunk;
 
 typedef struct narraytemp 
 {
-	npointer (*map)(int i, struct narray1temp *g); 
-	void(*alloc)(struct narray1temp *g); 
+	npointer (*map)(int index[], struct narraytemp *g); 
+	void(*alloc)(struct narraytemp *g); 
 	int id; 
 	MPI_Comm comm; 
 	 
-	int blockSize; 
-	int nodes;
+	int* nodes;
+	int totalNodes;
 	
 	int objSize;
 	int* sizes;
 	int totalSize;
 	int dimsCount;
 	
-	
-	
-	int thisSize;
-	BoxHeader box; 
+	int* index;
+	int* thisSizes;
+	int thisTotalSize;
+	void* data; 
 	MPI_Win win; 
-	Topo topo;
+	Topology topo;
 } narray;
 
-npointer narray1_map(int i, narray1 *na);
-void narray1_alloc(narray1 *na);
+npointer narray_map(int index[], narray* na);
+void narray_alloc(narray* na);
+void printNPointer(npointer p);
 
-void narray1Free(narray1 *na);
+void narrayFromRange(narray *na, Topology topo, int sizes[], int dimsCount, int objSize, npointer (*map)(int[], narray*), void (*alloc)(narray*));
+void narrayFree(narray *na);
 
-void narray1FromRange(narray1 *na, MPI_Comm comm, int size, int objSize);
-
-void narray1Put(narray1 *a,int i, void *send);
-void narray1Get(narray1 *a,int i,void**recv);
-void narray1Fence(narray1 *a);
-
+void narrayPut(narray* na, int index[], void* send);
+void narrayPutLine(narray* na, int index[], void* send, int size);
+void narrayGet(narray* na, int index[], void** recv);
+void narrayGetLine(narray* na, int index[], void** recv, int size);
+void narrayGetInBuffer(narray* na, int index[], void* recv);
+void narrayGetLineInBuffer(narray* na, int index[], void* recv, int size);
+void narrayFence(narray* na);
+void narrayBarrier(narray* na);
 #endif

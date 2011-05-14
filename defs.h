@@ -10,7 +10,7 @@
 #include <mpi.h>
 
 typedef enum {Tnone=0,Tgrid2,Tfgrid2,Tfgrid3,Tfgridn,Tntree} topoType;
-typedef struct {topoType type; void* obj;} Topo;
+typedef struct {topoType type; void* obj;} Topology;
 
 int nativeX,nativeY,X,Y;
 

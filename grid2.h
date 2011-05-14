@@ -11,7 +11,7 @@ typedef struct {
 	int id,nearSelf; 
 	MPI_Comm comm,near; 
 	int x,y; 
-	Topo topo;} grid2;
+	Topology topo;} grid2;
 
 void grid2FromNative(grid2 * g);
 void grid2Fromfgrid2(grid2 * g,fgrid2 * fg);

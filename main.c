@@ -197,6 +197,301 @@ void testarray21A(array21 *a)
 	MPI_Barrier(a->arr1->comm);
 }
 
+npointer narray_map_fgridn(int index[], narray *na)
+{
+	assert(na);
+	assert(index);
+	
+	int i;
+	for(i=0; i<na->dimsCount; i++)
+		assert((index[i] >= 0) && (index[i] < na->sizes[i]));
+	
+	assert(na->topo.obj != NULL);
+	assert(na->topo.type == Tfgridn);
+	fgridn* grid = (fgridn*)(na->topo.obj);
+	
+	int id;
+	int offset;
+	npointer pointer;
+	
+	//here goes calculation of id and offse
+	int* nodei = malloc(sizeof(int) * na->dimsCount);
+	int* offseti = malloc(sizeof(int) * na->dimsCount);
+	
+	for(i=0; i<na->dimsCount; i++)
+	{
+		nodei[i] = index[i] / na->thisSizes[i];
+		offseti[i] = index[i] % na->thisSizes[i];
+		//printf("offseti[%d] = %d\n", i, offseti[i]);
+	}
+	
+	id = grid->map(nodei, grid);
+	offset = 0;
+	for(i=0; i<(na->dimsCount - 1); i++)
+	{
+		offset += offseti[i];
+		offset *= na->thisSizes[i+1];
+	}
+	offset += offseti[i];
+	
+	free(nodei);
+	free(offseti);
+	
+	pointer.comm = na->comm;
+	pointer.id = id;
+	pointer.offset = offset;
+	
+	return pointer;
+}
+
+void narray_alloc_fgridn(narray *na)
+{
+	assert(na);
+	assert(na->dimsCount > 0);
+	assert(na->nodes == NULL);
+	
+	int i;
+	
+	//printf("In Alloc: (na-topo.obj != NULL) = %d\n", na->topo.obj != NULL);
+	//printf("In Alloc: (na->topo.type == Tfgridn) = %d\n", na->topo.type == Tfgridn);
+	
+	assert(na->topo.obj != NULL);
+	assert(na->topo.type == Tfgridn);
+	
+	fgridn* grid = (fgridn*)(na->topo.obj);
+	
+	assert(grid->dimsCount == na->dimsCount);
+	
+	//here goes creation of nodes
+	na->nodes = malloc(sizeof(int) * na->dimsCount);
+	
+	for(i=0; i<na->dimsCount; i++)
+	{
+		na->nodes[i] = grid->sizes[i];
+		//printf("in loop: nodes[%d] = %d\n", i, na->nodes[i]);
+	}
+	
+	assert(na->nodes != NULL);
+	for(i=0; i<na->dimsCount; i++)
+	{
+		assert(na->nodes[i] > 0);
+		assert((na->sizes[i] % na->nodes[i]) == 0);
+	}
+	
+	
+	//here goes calculation of local sizes
+	//plus calculation og thisTotalSize
+	na->thisSizes = malloc(sizeof(int) * na->dimsCount);
+	na->thisTotalSize = 1;
+	for(i=0; i<na->dimsCount; i++)
+	{
+		na->thisSizes[i] = na->sizes[i] / na->nodes[i];
+		printf("%d:%s: thisSizes[%d] = %d\n", na->id, grid->indexString, i, na->thisSizes[i]);
+		na->thisTotalSize *= na->thisSizes[i];
+	}
+	printf("%d:%s: thisTotalSize = %d\n", na->id, grid->indexString, na->thisTotalSize);
+	
+	//here goes calculation of index
+	na->index = malloc(sizeof(int) * na->dimsCount);
+	for(i=0; i<na->dimsCount; i++)
+	{
+		na->index[i] = na->thisSizes[i] * grid->index[i];
+		printf("%d:%s: index[%d] = %d\n", na->id, grid->indexString, i, na->index[i]);
+	}
+}
+
+void testnarray()
+{
+	
+	if(rank==0)
+		printf("\n\ntestnarray\n\n");
+	
+	fgridn* g = malloc(sizeof(fgridn));
+	narray* na = malloc(sizeof(narray));
+	
+	narray* na1 = malloc(sizeof(narray));
+	narray* na2 = malloc(sizeof(narray));
+	narray* na3 = malloc(sizeof(narray));
+	narray* na4 = malloc(sizeof(narray));
+	
+	int sizesGrid[] = {4, 2};
+	int dimsCountGrid = 2;
+	int sizesArray[] = {4, 4};
+	int dimsCountArray = 2;
+	
+	fgridnFromRange(g, MPI_COMM_WORLD, dimsCountGrid, sizesGrid, (fgridn_native), (fgridn_reverse));
+	narrayFromRange(na, fgridnGetTopology(g), sizesArray, dimsCountArray, sizeof(int), narray_map_fgridn, narray_alloc_fgridn);
+	
+	narrayFromRange(na1, fgridnGetTopology(g), sizesArray, dimsCountArray, sizeof(int), narray_map_fgridn, narray_alloc_fgridn);
+	narrayFromRange(na2, fgridnGetTopology(g), sizesArray, dimsCountArray, sizeof(int), narray_map_fgridn, narray_alloc_fgridn);
+	narrayFromRange(na3, fgridnGetTopology(g), sizesArray, dimsCountArray, sizeof(int), narray_map_fgridn, narray_alloc_fgridn);
+	narrayFromRange(na4, fgridnGetTopology(g), sizesArray, dimsCountArray, sizeof(int), narray_map_fgridn, narray_alloc_fgridn);
+	
+	int i;
+	int j;
+	npointer p;
+	int index[] = {0, 0};
+	
+	narrayBarrier(na);
+	
+	if(na->id == 0)
+	{
+		printf("test mapping\n");
+		
+		for(i=0; i<na->sizes[0]; i++)
+			for(j=0; j<na->sizes[1]; j++)
+			{
+				index[0] = i;
+				index[1] = j;
+				
+				p = na->map(index, na);
+				printf("map(%2d, %2d): id = %d offset = %d\n", index[0], index[1], p.id, p.offset);
+			}
+	}
+	
+	narrayFence(na1);
+	narrayFence(na2);
+	narrayFence(na3);
+	narrayFence(na4);
+	
+	
+	int* magicSource = malloc(sizeof(int) * na->totalSize);
+	int* magic1 = malloc(sizeof(int) * na->totalSize);
+	int* magic2 = malloc(sizeof(int) * na->totalSize);
+	int* magic3 = malloc(sizeof(int) * na->totalSize);
+	int* magic4 = malloc(sizeof(int) * na->totalSize);
+	int offset;
+	int offset1;
+	int offset2;
+	int offset3;
+	int offset4;
+	
+	for(i=0; i<na->totalSize; i++)
+	{
+		magicSource[i] = i;
+		magic1[i] = -1;
+		magic2[i] = -1;
+		magic3[i] = -1;
+		magic4[i] = -1;
+	}
+	
+	
+	offset1 = 0;
+	offset2 = 0;
+	offset3 = 0;
+	offset4 = 0;
+	if(na->id == 0)
+		for(i=0; i<na->sizes[0]; i++)
+		{
+			for(j=0; j<na1->sizes[1]; j++)
+			{
+				index[0] = i;
+				index[1] = j;
+				
+				narrayPut(na1, index, magicSource + offset1);
+				offset1++;
+			}
+			
+			for(j=0; j<na2->sizes[1]; j++)
+			{
+				index[0] = i;
+				index[1] = j;
+				
+				narrayPutLine(na2, index, magicSource + offset2, 1);
+				offset2++;
+			}
+			
+			for(j=0; j<na3->sizes[1]; j += na3->thisSizes[1])
+			{
+				index[0] = i;
+				index[1] = j;
+				
+				narrayPutLine(na3, index, magicSource + offset3, na3->thisSizes[1]);
+				offset3 += na3->thisSizes[1];
+			}
+			
+			{
+				index[0] = i;
+				index[1] = 0;
+				narrayPutLine(na4, index, magicSource + offset4, na4->sizes[1]);
+				offset4 += na4->sizes[1];
+			}
+			
+		}
+	narrayFence(na1);
+	narrayFence(na2);
+	narrayFence(na3);
+	narrayFence(na4);
+	
+	offset = 0;
+	if(na->id == 0)
+		for(i=0; i<na->sizes[0]; i++)
+		{
+			index[0] = i;
+			index[1] = 0;
+			narrayGetLineInBuffer(na4, index, &(magic4[offset]), na4->sizes[1]);
+			
+			for(j=0; j<na->sizes[1]; j++)
+			{
+				index[0] = i;
+				index[1] = j;
+				
+				narrayGetInBuffer(na1, index, &(magic1[offset]));
+				narrayGetInBuffer(na2, index, &(magic2[offset]));
+				narrayGetInBuffer(na3, index, &(magic3[offset]));
+				//narrayGetInBuffer(na4, index, &(magic4[offset]));
+				offset++;
+			}
+		}
+			
+	
+	narrayFence(na1);
+	narrayFence(na2);
+	narrayFence(na3);
+	narrayFence(na4);
+	
+	offset = 0;
+	if(na->id == 0)
+		for(i=0; i<na->sizes[0]; i++)
+			for(j=0; j<na->sizes[1]; j++)
+			{
+				if(magicSource[offset] != magic1[offset])
+					printf("error: magic1 put-get missmatch [%d, %d]: %d %d \n", i, j, magicSource[offset], magic1[offset]);
+				if(magicSource[offset] != magic2[offset])
+					printf("error: magic2 put-get missmatch [%d, %d]: %d %d \n", i, j, magicSource[offset], magic2[offset]);
+				if(magicSource[offset] != magic3[offset])
+					printf("error: magic3 put-get missmatch [%d, %d]: %d %d \n", i, j, magicSource[offset], magic3[offset]);
+				if(magicSource[offset] != magic4[offset])
+					printf("error: magic4 put-get missmatch [%d, %d]: %d %d \n", i, j, magicSource[offset], magic4[offset]);
+				offset++;
+			}
+	
+	
+	narrayBarrier(na);
+	
+	//printf("%d:%s  local data -> %d, %d\n", na->id, g->indexString, ((int*)(na->data))[0], ((int*)(na->data))[1]);
+	
+	free(magicSource);
+	free(magic1);
+	free(magic2);
+	free(magic3);
+	free(magic4);
+	
+	narrayFree(na);
+	free(na);
+	narrayFree(na1);
+	free(na1);
+	narrayFree(na2);
+	free(na2);
+	narrayFree(na3);
+	free(na3);
+	narrayFree(na4);
+	free(na4);
+	
+	fgridnFree(g);
+	free(g);
+}
+
 void testntreeA(ntree *t)
 {
 	assert(t);
@@ -901,6 +1196,8 @@ int main(int argc, char **argv)
 	//testarray2A(&ar2);
 	//testcacheB(&ar2);
 	//testarray21A(&ar21);
+	
+	testnarray();
 	
 	//testboxA();//be careful: this test req ~1.5 gig of ram
 	//testboxB();
