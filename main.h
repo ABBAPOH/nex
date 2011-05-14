@@ -8,6 +8,7 @@
 #include "grid2.h"
 #include "ntree.h"
 #include "array.h"
+#include "narray.h"
 #include "range.h"
 #include "box.h"
 #include "cache.h"

@@ -20,7 +20,7 @@ typedef struct fgridntemp
 	int subdimsCount;
 	unsigned int dimsMask;
 	
-	Topo topology;
+	Topology topology;
 	
 } fgridn;
 
@@ -33,6 +33,7 @@ void fgridn_reverse(fgridn *g);
 
 void fgridnFromRange(fgridn * g, MPI_Comm comm, int dimsCount, int* sizes, int(*map)(int*, fgridn *), void(*reverse)(fgridn *));
 void fgridnFromNative(fgridn * g);
+Topology fgridnGetTopology(fgridn * g);
 
 void fgridnSlice(fgridn * g,fgridn * ng, int dim, int sliceIndex);
 void fgridnSliceLinear(fgridn * g,fgridn * ng, int* sliceSteps);

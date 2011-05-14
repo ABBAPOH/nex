@@ -23,7 +23,7 @@ typedef struct array1temp {
 	long long size;
 	void *data; 
 	MPI_Win win; 
-	Topo topo;} array1;
+	Topology topo;} array1;
 
 typedef struct array2temp {
 	pointer (*map)(int x, int y, struct array2temp *a);
@@ -33,13 +33,13 @@ typedef struct array2temp {
 	int sizeX,sizeY,nodes,thisStartX,thisSizeX,thisStartY,thisSizeY,objSize; 
 	void *data; 
 	MPI_Win win; 
-	Topo topo;} array2;
+	Topology topo;} array2;
 	
 typedef struct array21temp {
 	long long (*map)(int x, int y, struct array21temp *a);
 	int sizeX,sizeY; 
 	array1* arr1;
-	Topo topo;} array21;
+	Topology topo;} array21;
 
 void factorizeWithRatio(int nodes, int w, int h, int* x, int* y);
 

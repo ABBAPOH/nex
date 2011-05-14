@@ -12,7 +12,7 @@ typedef struct ntreetemp {
 	MPI_Comm comm;  
 	int num; 
 	struct ntreetemp *parent; 
-	Topo topo;
+	Topology topo;
 } ntree;
 
 void ntreeFromNative(ntree * t);

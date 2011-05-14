@@ -14,7 +14,7 @@ typedef struct fgrid2temp
 	MPI_Comm xLine;
 	MPI_Comm yLine;
 	int xLineSelf,yLineSelf;
-	Topo topo;
+	Topology topo;
 } fgrid2;
 
 int fgrid2_native(int x,int y, fgrid2 *fg);
