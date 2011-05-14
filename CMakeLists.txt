@@ -4,8 +4,6 @@ cmake_minimum_required( VERSION 2.6 )
 
 find_package( MPI REQUIRED )
 
-#include( CMakeConfig.txt )
-
 set( HEADERS 
     array.h
     box.h
