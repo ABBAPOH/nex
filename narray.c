@@ -48,7 +48,7 @@ void narray_alloc_example(narray* na)
 
 void printNPointer(npointer p)
 {
-	printf("pointer: comm = %d id = %2d offset = %3d\n", p.comm, p.id, p.offset);
+	printf("pointer: comm = %d id = %2d offset = %3d\n", (int)p.comm, p.id, p.offset);
 }
 
 void narrayFromRange(narray* na, Topology topo, int sizes[], int dimsCount, int objSize, npointer (*map)(int[], narray*), void (*alloc)(narray*))

@@ -71,7 +71,7 @@ void testfgrid2A(fgrid2 * fg2, fgrid2 * slfg2)
 		printf("\n\ntestfgrid2A\n\n");
 	MPI_Barrier(fg2->comm);
 	
-        printf("rank=%d | (%d,%d)[%d,%d] | (%d,%d)[%d,%d]\n",rank, fg2->x, fg2->y, fg2->height, fg2->width, slfg2->x, slfg2->y, slfg2->height, slfg2->width);
+	printf("rank=%d | (%d,%d)[%d,%d] | (%d,%d)[%d,%d]\n", rank, fg2->x, fg2->y, fg2->height, fg2->width, slfg2->x, slfg2->y, slfg2->height, slfg2->width);
 	
 	MPI_Barrier(fg2->comm);
 }
@@ -96,7 +96,7 @@ void testarray1A(array1 *a)
 		for(i=0; i<a->size; i++)
 	{
 		p = a->map(i, a);
-		printf("pointer   i=%d  id=%d  index=%d\n", i, p.id, p.index);
+		printf("pointer   i=%d  id=%d  index=%d\n", i, (int)p.id, (int)p.index);
 	}
 	
 	MPI_Barrier(a->comm);
@@ -145,7 +145,7 @@ void testarray2A(array2 *a)
 			for(y=0; y<a->sizeY; y++)
 			{
 				p = a->map(x, y, a);
-				printf("array2-map (%d,%d) = (%d,%d)\n", x,y, p.id,p.index);
+				printf("array2-map (%d,%d) = (%d,%d)\n", x, y, (int)p.id, (int)p.index);
 			}
 	}
 	
@@ -847,12 +847,12 @@ void testgrouping()
 	{
 		MPI_Recv( &comm2, 1, MPI_INT, 1, 777, MPI_COMM_WORLD ,NULL);
 		MPI_Recv( &comm3, 1, MPI_INT, 2, 777, MPI_COMM_WORLD ,NULL);
-		printf("(%d,%d,%d)\n", comm, comm2, comm3);
+		printf("(%d, %d, %d)\n", (int)comm, (int)comm2, (int)comm3);
 		//as you see actualy comm was assigned for 0 but with trash abd every task has unique comm
 		//MPI_Comm_size(comm2,&t);//won't do any good
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
-	printf("comm(%d)=%d\n", rank, comm);
+	printf("comm(%d) = %d\n", rank, (int)comm);
 	
 	//printf("after(%d)\n",rank);
 	free(ranks);
@@ -917,7 +917,7 @@ void testboxA()
 
 void mapFunc_my(void* obj, long long index, BoxHeader *bh, void* ext)
 {
-	printf("## [%d] == %d  \t|  ext == %d\n", index, *((int*)obj), *((int*)ext));
+	printf("## [%d] == %d  \t|  ext == %d\n", (int)index, *((int*)obj), *((int*)ext));
 }
 
 int ifFunc_my(long long index, void* ext)
@@ -929,7 +929,8 @@ void testboxB()
 {
 	BoxHeader b;
 	
-	if(!rank)printf("\n\ntestboxB\n\nSize of BoxNode = %d\n", sizeof(BoxNode));
+	if(!rank)
+		printf("\n\ntestboxB\n\nSize of BoxNode = %d\n", sizeof(BoxNode));
 	MPI_Barrier(MPI_COMM_WORLD);
 	
 	int test;
