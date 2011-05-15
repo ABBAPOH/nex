@@ -35,9 +35,21 @@ set( SOURCES
     tasks.c
 )
 
+if(NOT NUM_PROCS )
+    set( NUM_PROCS 8 )
+endif()
+
+if( MPI_LIBRARY_PATH )
+    link_directories( ${MPI_LIBRARY_PATH} )
+endif()
+
+if( MPI_INCLUDE_PATH )
+    include_directories( ${MPI_INCLUDE_PATH} )
+endif()
+
 add_executable( nex ${HEADERS} ${SOURCES} )
 target_link_libraries( nex mpi m )
 
 enable_testing()
 
-add_custom_target( run mpirun -n 8 ./nex)
+add_custom_target( run mpirun -n ${NUM_PROCS} ./nex )
