@@ -313,6 +313,8 @@ void testnarray()
 	narray* na2 = malloc(sizeof(narray));
 	narray* na3 = malloc(sizeof(narray));
 	narray* na4 = malloc(sizeof(narray));
+	narray* na5 = malloc(sizeof(narray));
+	narray* na6 = malloc(sizeof(narray));
 	
 	int sizesGrid[] = {4, 2};
 	int dimsCountGrid = 2;
@@ -326,11 +328,14 @@ void testnarray()
 	narrayFromRange(na2, fgridnGetTopology(g), sizesArray, dimsCountArray, sizeof(int), narray_map_fgridn, narray_alloc_fgridn);
 	narrayFromRange(na3, fgridnGetTopology(g), sizesArray, dimsCountArray, sizeof(int), narray_map_fgridn, narray_alloc_fgridn);
 	narrayFromRange(na4, fgridnGetTopology(g), sizesArray, dimsCountArray, sizeof(int), narray_map_fgridn, narray_alloc_fgridn);
+	narrayFromRange(na5, fgridnGetTopology(g), sizesArray, dimsCountArray, sizeof(int), narray_map_fgridn, narray_alloc_fgridn);
+	narrayFromRange(na6, fgridnGetTopology(g), sizesArray, dimsCountArray, sizeof(int), narray_map_fgridn, narray_alloc_fgridn);
 	
 	int i;
 	int j;
 	npointer p;
 	int index[] = {0, 0};
+	int indexZero[] = {0, 0};
 	
 	narrayBarrier(na);
 	
@@ -353,6 +358,8 @@ void testnarray()
 	narrayFence(na2);
 	narrayFence(na3);
 	narrayFence(na4);
+	narrayFence(na5);
+	narrayFence(na6);
 	
 	
 	int* magicSource = malloc(sizeof(int) * na->totalSize);
@@ -360,6 +367,8 @@ void testnarray()
 	int* magic2 = malloc(sizeof(int) * na->totalSize);
 	int* magic3 = malloc(sizeof(int) * na->totalSize);
 	int* magic4 = malloc(sizeof(int) * na->totalSize);
+	int* magic5 = malloc(sizeof(int) * na->totalSize);
+	int* magic6 = malloc(sizeof(int) * na->totalSize);
 	int offset;
 	int offset1;
 	int offset2;
@@ -373,6 +382,8 @@ void testnarray()
 		magic2[i] = -1;
 		magic3[i] = -1;
 		magic4[i] = -1;
+		magic5[i] = -1;
+		magic6[i] = -1;
 	}
 	
 	
@@ -381,6 +392,7 @@ void testnarray()
 	offset3 = 0;
 	offset4 = 0;
 	if(na->id == 0)
+	{
 		for(i=0; i<na->sizes[0]; i++)
 		{
 			for(j=0; j<na1->sizes[1]; j++)
@@ -416,12 +428,23 @@ void testnarray()
 				narrayPutLine(na4, index, magicSource + offset4, na4->sizes[1]);
 				offset4 += na4->sizes[1];
 			}
-			
 		}
+		
+		narrayPutBlock(na5, indexZero, magicSource, sizesArray);
+		
+		int indexTemp[] = {2, 0};
+		int sizesTemp[] = {2, 4};
+		narrayPutBlock(na6, indexZero, magicSource, sizesTemp);
+		narrayPutBlock(na6, indexTemp, magicSource + 8, sizesTemp);
+		
+	}
+	
 	narrayFence(na1);
 	narrayFence(na2);
 	narrayFence(na3);
 	narrayFence(na4);
+	narrayFence(na5);
+	narrayFence(na6);
 	
 	offset = 0;
 	if(na->id == 0)
@@ -440,6 +463,8 @@ void testnarray()
 				narrayGetInBuffer(na2, index, &(magic2[offset]));
 				narrayGetInBuffer(na3, index, &(magic3[offset]));
 				//narrayGetInBuffer(na4, index, &(magic4[offset]));
+				narrayGetInBuffer(na5, index, &(magic5[offset]));
+				narrayGetInBuffer(na6, index, &(magic6[offset]));
 				offset++;
 			}
 		}
@@ -449,6 +474,8 @@ void testnarray()
 	narrayFence(na2);
 	narrayFence(na3);
 	narrayFence(na4);
+	narrayFence(na5);
+	narrayFence(na6);
 	
 	offset = 0;
 	if(na->id == 0)
@@ -463,6 +490,10 @@ void testnarray()
 					printf("error: magic3 put-get missmatch [%d, %d]: %d %d \n", i, j, magicSource[offset], magic3[offset]);
 				if(magicSource[offset] != magic4[offset])
 					printf("error: magic4 put-get missmatch [%d, %d]: %d %d \n", i, j, magicSource[offset], magic4[offset]);
+				if(magicSource[offset] != magic5[offset])
+					printf("error: magic5 put-get missmatch [%d, %d]: %d %d \n", i, j, magicSource[offset], magic5[offset]);
+				if(magicSource[offset] != magic6[offset])
+					printf("error: magic6 put-get missmatch [%d, %d]: %d %d \n", i, j, magicSource[offset], magic6[offset]);
 				offset++;
 			}
 	
@@ -476,6 +507,8 @@ void testnarray()
 	free(magic2);
 	free(magic3);
 	free(magic4);
+	free(magic5);
+	free(magic6);
 	
 	narrayFree(na);
 	free(na);
@@ -487,6 +520,10 @@ void testnarray()
 	free(na3);
 	narrayFree(na4);
 	free(na4);
+	narrayFree(na5);
+	free(na5);
+	narrayFree(na6);
+	free(na6);
 	
 	fgridnFree(g);
 	free(g);

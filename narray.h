@@ -12,16 +12,16 @@ typedef struct
 {
 	MPI_Comm comm; 
 	int id;
-        unsigned offset;
+	unsigned offset;
 } npointer;
 
 typedef struct narraytemp 
 {
-	npointer (*map)(int index[], struct narraytemp *g); 
-	void(*alloc)(struct narraytemp *g); 
-	int id; 
+	npointer (*map)(int index[], struct narraytemp *g);
+	void(*alloc)(struct narraytemp *g);
+	int id;
 	MPI_Comm comm; 
-	 
+	
 	int* nodes;
 	int totalNodes;
 	
@@ -33,8 +33,8 @@ typedef struct narraytemp
 	int* index;
 	int* thisSizes;
 	int thisTotalSize;
-	void* data; 
-	MPI_Win win; 
+	void* data;
+	MPI_Win win;
 	Topology topo;
 } narray;
 
@@ -47,10 +47,12 @@ void narrayFree(narray *na);
 
 void narrayPut(narray* na, int index[], void* send);
 void narrayPutLine(narray* na, int index[], void* send, int size);
+void narrayPutBlock(narray* na, int index[], void* send, int sizes[]);
 void narrayGet(narray* na, int index[], void** recv);
 void narrayGetLine(narray* na, int index[], void** recv, int size);
 void narrayGetInBuffer(narray* na, int index[], void* recv);
 void narrayGetLineInBuffer(narray* na, int index[], void* recv, int size);
 void narrayFence(narray* na);
 void narrayBarrier(narray* na);
+
 #endif

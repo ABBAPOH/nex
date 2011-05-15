@@ -186,7 +186,9 @@ void narrayPutLine(narray* na, int index[], void* send, int size)
 	//printNPointer(p2);
 	
 	if(p1.id == p2.id)
+	{
 		MPI_Put(send, na->objSize * size, MPI_CHAR, p1.id, p1.offset, na->objSize * size, MPI_CHAR, na->win);
+	}
 	else
 	{
 		printf("extended put\n");
@@ -204,7 +206,7 @@ void narrayPutLine(narray* na, int index[], void* send, int size)
 			}
 			else
 			{
-				MPI_Put(send + sndOffset * na->objSize, na->objSize * sndLength, MPI_CHAR, p1.id, p1.offset, na->objSize * sndLength, 	MPI_CHAR, na->win);
+				MPI_Put(send + sndOffset * na->objSize, na->objSize * sndLength, MPI_CHAR, p1.id, p1.offset, na->objSize * sndLength, MPI_CHAR, na->win);
 				//printf("send %d elems with offset = %d to %d:%d\n", sndLength, sndOffset, p1.id, p1.offset);
 				p1 = na->map(index2, na);
 				sndOffset += sndLength;
@@ -215,6 +217,56 @@ void narrayPutLine(narray* na, int index[], void* send, int size)
 		
 		MPI_Put(send + sndOffset * na->objSize, na->objSize * sndLength, MPI_CHAR, p1.id, p1.offset, na->objSize * sndLength, MPI_CHAR, na->win);
 		//printf("send %d elems with offset = %d to %d:%d\n", sndLength, sndOffset, p1.id, p1.offset);
+	}
+	
+	free(index2);
+}
+
+void narrayPutBlock(narray* na, int index[], void* send, int sizes[])
+{
+	assert(na);
+	assert(send);
+	assert(index);
+	assert(sizes != NULL);
+	
+	int i;
+	int j;
+	
+	for(i=0; i<na->dimsCount; i++)
+		assert((sizes[i]>0) && (sizes[i] <= na->sizes[i]));
+	
+	int* index2 = malloc(sizeof(int) * na->dimsCount);
+	int linesCount = 1;
+	int lineOffset = 0; // in terms of objects, not bytes
+	
+	for(i=0; i<na->dimsCount; i++)
+	{
+		index2[i] = index[i];
+		linesCount *= sizes[i];
+	}
+	
+	linesCount /= sizes[na->dimsCount - 1];
+	
+	for(i=0; i<linesCount; i++)
+	{
+		//make index2 point to line[i]
+		int lineNum = i;
+		
+		for(j = na->dimsCount-2 ; j >= 0; j--)
+		{
+			index2[j] = (lineNum % sizes[j]);
+			lineNum = lineNum / sizes[j];
+		}
+		index2[na->dimsCount - 1] = 0;
+		
+		for(j=0; j<na->dimsCount; j++)
+		{
+			index2[j] += index[j];
+			//printf("line(%d)[%d] %d -> %d\n", i, j, index2[j], index2[j] + (j == na->dimsCount-1) ? (sizes[na->dimsCount - 1]) : (0));
+		}
+		
+		narrayPutLine(na, index2, send + lineOffset*na->objSize, sizes[na->dimsCount - 1]);
+		lineOffset += sizes[na->dimsCount - 1];
 	}
 	
 	free(index2);
