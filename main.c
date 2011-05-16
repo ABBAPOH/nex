@@ -448,6 +448,7 @@ void testnarray()
 	
 	offset = 0;
 	if(na->id == 0)
+	{
 		for(i=0; i<na->sizes[0]; i++)
 		{
 			index[0] = i;
@@ -464,10 +465,13 @@ void testnarray()
 				narrayGetInBuffer(na3, index, &(magic3[offset]));
 				//narrayGetInBuffer(na4, index, &(magic4[offset]));
 				narrayGetInBuffer(na5, index, &(magic5[offset]));
-				narrayGetInBuffer(na6, index, &(magic6[offset]));
+				//narrayGetInBuffer(na6, index, &(magic6[offset]));
 				offset++;
 			}
 		}
+		
+		narrayGetBlockInBuffer(na6, indexZero, magic6, na6->sizes);
+	}
 			
 	
 	narrayFence(na1);

@@ -233,7 +233,7 @@ void narrayPutBlock(narray* na, int index[], void* send, int sizes[])
 	int j;
 	
 	for(i=0; i<na->dimsCount; i++)
-		assert((sizes[i]>0) && (sizes[i] <= na->sizes[i]));
+		assert((sizes[i] > 0) && (sizes[i] <= na->sizes[i]));
 	
 	int* index2 = malloc(sizeof(int) * na->dimsCount);
 	int linesCount = 1;
@@ -244,7 +244,6 @@ void narrayPutBlock(narray* na, int index[], void* send, int sizes[])
 		index2[i] = index[i];
 		linesCount *= sizes[i];
 	}
-	
 	linesCount /= sizes[na->dimsCount - 1];
 	
 	for(i=0; i<linesCount; i++)
@@ -262,7 +261,6 @@ void narrayPutBlock(narray* na, int index[], void* send, int sizes[])
 		for(j=0; j<na->dimsCount; j++)
 		{
 			index2[j] += index[j];
-			//printf("line(%d)[%d] %d -> %d\n", i, j, index2[j], index2[j] + (j == na->dimsCount-1) ? (sizes[na->dimsCount - 1]) : (0));
 		}
 		
 		narrayPutLine(na, index2, send + lineOffset*na->objSize, sizes[na->dimsCount - 1]);
@@ -293,6 +291,27 @@ void narrayGetLine(narray* na, int index[], void** recv, int size)
 	
 	*recv = malloc(na->objSize * size);
 	narrayGetLineInBuffer(na, index, *recv, size);
+}
+
+void narrayGetBlock(narray* na, int index[], void** recv, int sizes[])
+{
+	assert(na);
+	assert(recv);
+	assert(index);
+	assert(sizes);
+	
+	int i;
+	int blockSize = 1;
+	
+	for(i=0; i< na->dimsCount; i++)
+	{
+		assert((sizes[i] > 0) && (sizes[i] <= na->sizes[i]));
+		blockSize *= sizes[i];
+	}
+	
+	*recv = malloc(na->objSize * blockSize);
+	
+	narrayGetBlockInBuffer(na, index, *recv, sizes);
 }
 
 void narrayGetInBuffer(narray* na, int index[], void* recv)
@@ -356,6 +375,54 @@ void narrayGetLineInBuffer(narray* na, int index[], void* recv, int size)
 		
 		MPI_Get(recv + sndOffset * na->objSize, na->objSize * sndLength, MPI_CHAR, p1.id, p1.offset, na->objSize * sndLength, 	MPI_CHAR, na->win);
 		//printf("got %d elems with offset = %d from %d:%d\n", sndLength, sndOffset, p1.id, p1.offset);
+	}
+	
+	free(index2);
+}
+
+void narrayGetBlockInBuffer(narray* na, int index[], void* recv, int sizes[])
+{
+	assert(na);
+	assert(recv);
+	assert(index);
+	assert(sizes != NULL);
+	
+	int i;
+	int j;
+	
+	for(i=0; i<na->dimsCount; i++)
+		assert((sizes[i] > 0) && (sizes[i] <= na->sizes[i]));
+	
+	int* index2 = malloc(sizeof(int) * na->dimsCount);
+	int linesCount = 1;
+	int lineOffset = 0; // in terms of objects, not bytes
+	
+	for(i=0; i<na->dimsCount; i++)
+	{
+		index2[i] = index[i];
+		linesCount *= sizes[i];
+	}
+	linesCount /= sizes[na->dimsCount - 1];
+	
+	for(i=0; i<linesCount; i++)
+	{
+		//make index2 point to line[i]
+		int lineNum = i;
+		
+		for(j = na->dimsCount-2 ; j >= 0; j--)
+		{
+			index2[j] = (lineNum % sizes[j]);
+			lineNum = lineNum / sizes[j];
+		}
+		index2[na->dimsCount - 1] = 0;
+		
+		for(j=0; j<na->dimsCount; j++)
+		{
+			index2[j] += index[j];
+		}
+		
+		narrayGetLineInBuffer(na, index2, recv + lineOffset*na->objSize, sizes[na->dimsCount - 1]);
+		lineOffset += sizes[na->dimsCount - 1];
 	}
 	
 	free(index2);

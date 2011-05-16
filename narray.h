@@ -48,10 +48,15 @@ void narrayFree(narray *na);
 void narrayPut(narray* na, int index[], void* send);
 void narrayPutLine(narray* na, int index[], void* send, int size);
 void narrayPutBlock(narray* na, int index[], void* send, int sizes[]);
+
 void narrayGet(narray* na, int index[], void** recv);
 void narrayGetLine(narray* na, int index[], void** recv, int size);
+void narrayGetBlock(narray* na, int index[], void** recv, int sizes[]);
+
 void narrayGetInBuffer(narray* na, int index[], void* recv);
 void narrayGetLineInBuffer(narray* na, int index[], void* recv, int size);
+void narrayGetBlockInBuffer(narray* na, int index[], void* recv, int sizes[]);
+
 void narrayFence(narray* na);
 void narrayBarrier(narray* na);
 
