@@ -22,6 +22,7 @@ void ntreeFromfgrid2Trans(ntree * t, fgrid2* fg);
 void ntreeFromfgrid2Param(ntree * t, fgrid2* fg, int orient, int toproot, int bottomroot);
 void ntreeFromfgrid3(ntree * t, fgrid3* fg);
 void ntreeFromfgridn(ntree * t, fgridn* fg, unsigned int dims[], int dimRoots[], int dimCount);
+void ntreeFromfgridnNums(ntree * t, fgridn* fg, unsigned int dimNums[], int dimRoots[]);
 
 void ntreeFree(ntree * t);
 

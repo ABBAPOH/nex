@@ -572,6 +572,7 @@ void testntreeB()
 	ntree* t2 = malloc(sizeof(ntree));
 	ntree* t3 = malloc(sizeof(ntree));
 	ntree* t4 = malloc(sizeof(ntree));
+	ntree* t5 = malloc(sizeof(ntree));
 	
 	int i;
 	
@@ -599,10 +600,14 @@ void testntreeB()
 	int t_dimRoots4[] = {0, 0};
 	int t_dimsCount4 = 2;
 	
+	int t_dims5[] = {0, 1, 2};
+	int t_dimRoots5[] = {0, 0, 0};
+	
 	ntreeFromfgridn(t1, g1, t_dims1, t_dimRoots1, t_dimsCount1);
 	ntreeFromfgridn(t2, g2, t_dims2, t_dimRoots2, t_dimsCount2);
 	ntreeFromfgridn(t3, g2, t_dims3, t_dimRoots3, t_dimsCount3);
 	ntreeFromfgridn(t4, g2, t_dims4, t_dimRoots4, t_dimsCount4);
+	ntreeFromfgridnNums(t5, g2, t_dims5, t_dimRoots5);
 	
 	if(g1->id == 0)
 	{
@@ -615,9 +620,10 @@ void testntreeB()
 	ntree* p = NULL;
 	
 	//p=t1;
-	p=t2;
+	//p=t2;
 	//p=t3;
 	//p=t4;
+	p=t5;
 	
 	int treegatherchar = (char)('A'+(g1->id)%(g1->totalSize));
 	int *treegather = NULL; 
@@ -643,10 +649,12 @@ void testntreeB()
 	ntreeFree(t2);
 	ntreeFree(t3);
 	ntreeFree(t4);
+	ntreeFree(t5);
 	free(t1);
 	free(t2);
 	free(t3);
 	free(t4);
+	free(t5);
 	
 	fgridnBarrier(g1);
 	
@@ -708,7 +716,7 @@ void testfgrid3C(fgrid3 * fg3, fgrid3 * slfg3)
 		printf("\n\ntestfgrid3C\n\n");
 	MPI_Barrier(fg3->comm);
 	
-	printf("rank=%d  |  (%d,%d,%d)[%d,%d,%d]  |  (%d,%d,%d)[%d,%d,%d]\n",rank, fg3->x, fg3->y, fg3->z, fg3->height, fg3->width, fg3->length    , slfg3->x, slfg3->y, slfg3->z, slfg3->height, slfg3->width, slfg3->length);
+	printf("rank=%d  |  (%d,%d,%d)[%d,%d,%d]  |  (%d,%d,%d)[%d,%d,%d]\n",rank, fg3->x, fg3->y, fg3->z, fg3->height, fg3->width, fg3->length, slfg3->x, slfg3->y, slfg3->z, slfg3->height, slfg3->width, slfg3->length);
 	
 	MPI_Barrier(fg3->comm);
 }

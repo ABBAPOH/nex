@@ -231,6 +231,30 @@ void ntreeFromfgridn(ntree* t, fgridn* fg, unsigned int dims[], int dimRoots[], 
 	free(isLevelRoot);
 }
 
+void ntreeFromfgridnNums(ntree * t, fgridn* fg, unsigned int dimNums[], int dimRoots[])
+{
+	assert(t);
+	assert(fg);
+	assert(dimNums);
+	assert(dimRoots);
+	
+	int i;
+	
+	for(i=0; i<fg->dimsCount; i++)
+		assert((dimNums[i] >= 0) && (dimNums[i] < fg->dimsCount));
+	
+	unsigned int* dimsMask = malloc(sizeof(unsigned int) * fg->dimsCount);
+	
+	for(i=0; i<fg->dimsCount; i++)
+	{
+		dimsMask[i] = 1<<dimNums[i];
+	}
+	
+	ntreeFromfgridn(t, fg, dimsMask, dimRoots, fg->dimsCount);
+	
+	free(dimsMask);
+}
+
 /*!
   \fn void ntreeFree(ntree * t)
   \brief Frees tree \a t. Fills it's field with -1.
