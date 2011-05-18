@@ -1,6 +1,6 @@
 #include "nloop.h"
 
-void nloopFromnarray(nloop *loop, Topology topo, int sizes[], int dimsCount, npointer (*map)(int[], narray*), void (*alloc)(narray*), nloop_work_func func, nloop_depend_func depend)
+void nloopFromTopo(nloop *loop, Topology topo, int sizes[], int dimsCount, npointer (*map)(int[], narray*), void (*alloc)(narray*), nloop_work_func func, nloop_depend_func depend)
 {
 	
 }
@@ -15,7 +15,7 @@ int nloopDo(nloop *loop, int index[], void* data)
 	
 }
 
-int nloopDoWithDeps(nloop *loop, int index[], void* data)
+int nloopDoWithDeps(nloop *loop, int index[], void* data);
 {
 	
 }

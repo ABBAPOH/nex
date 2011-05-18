@@ -55,7 +55,7 @@ void narrayFromRange(narray* na, Topology topo, int sizes[], int dimsCount, int 
 {
 	assert(na);
 	assert(sizes);
-	assert(objSize > 0);
+	assert(objSize >= 0);
 	assert(map);
 	assert(alloc);
 	assert(topo.obj != NULL);
@@ -102,8 +102,11 @@ void narrayFromRange(narray* na, Topology topo, int sizes[], int dimsCount, int 
 	na->alloc = alloc;
 	na->alloc(na);
 	assert(na->thisTotalSize > 0);
-	MPI_Alloc_mem(na->thisTotalSize * na->objSize, MPI_INFO_NULL, &(na->data) );
-	MPI_Win_create(na->data, na->thisTotalSize * na->objSize, na->objSize, MPI_INFO_NULL, na->comm, &(na->win));
+	if(objSize > 0)
+	{
+		MPI_Alloc_mem(na->thisTotalSize * na->objSize, MPI_INFO_NULL, &(na->data) );
+		MPI_Win_create(na->data, na->thisTotalSize * na->objSize, na->objSize, MPI_INFO_NULL, na->comm, &(na->win));
+	}
 	
 	na->map = map;
 	
