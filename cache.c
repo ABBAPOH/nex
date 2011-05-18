@@ -61,6 +61,62 @@ void cacheFree(Cache* c)
 	c->real_array=NULL;
 }
 
+void ncacheBoxFromnarray(ncache* c, narray* na)
+{
+	assert(c);
+	assert(na);
+	
+	c->type = Tbox;
+	
+	c->put = ncachePut_box;
+	c->get = ncacheGet_box;
+	c->getInBuffer = ncacheGetInBuffer_box;
+	c->putLine = ncachePutLine_box;
+	c->getLine = ncacheGetLine_box;
+	c->getLineInBuffer = ncacheGetLineInBuffer_box;
+	c->putBlock = ncachePutBlock_box;
+	c->getBlock = ncacheGetBlock_box;
+	c->getBlockInBuffer = ncacheGetBlockInBuffer_box;
+	c->flush = ncacheFlush_box;
+	c->clear = ncacheClear_box;
+	
+	c->array = na;
+	c->real_cache = malloc(sizeof(BoxHeader));
+	boxFromNative((BoxHeader*)(c->real_cache), na->objSize);
+}
+
+void ncacheFree(ncache* c)
+{
+	assert(c);
+	
+	c->put = NULL;
+	c->get = NULL;
+	c->getInBuffer = NULL;
+	c->putLine = NULL;
+	c->getLine = NULL;
+	c->getLineInBuffer = NULL;
+	c->putBlock = NULL;
+	c->getBlock = NULL;
+	c->getBlockInBuffer = NULL;
+	c->flush = NULL;
+	c->clear = NULL;
+	
+	switch (c->type)
+	{
+		case Tbox: {
+			boxFree((BoxHeader*)(c->real_cache));
+			free(c->real_cache);
+		} break;
+		default: {
+			assert(0);
+		} break;
+	}
+	
+	c->type = Terror;
+	
+	c->array = NULL;
+}
+
 void cacheMapFlush_box(void* obj, long long index, BoxHeader *bh, void* ext)
 {
 	Cache* c=(Cache*)ext;
@@ -125,11 +181,11 @@ void cachePut_box(Cache *c, abstractPointer p, void* send, unsigned flags)
 		default: assert(0);break;
 	}
 	
-	char F_THROUGH_SET=flags&F_THROUGH;
-	char F_INCACHE_SET=flags&F_INCACHE;
-	char F_COPYCACHE_SET=flags&F_COPYCACHE;
+	char F_THROUGH_SET = flags&F_THROUGH;
+	char F_INCACHE_SET = flags&F_INCACHE;
+	char F_COPYCACHE_SET = flags&F_COPYCACHE;
 	BoxHeader* realc=(BoxHeader*)(c->real_cache);
-	char isIn= (boxGet(realc, cacheIndex) != NULL);
+	char isIn = (boxGet(realc, cacheIndex) != NULL);
 	
 	printf("cachePut_box(%d)  :  F_THROUGH_SET=%d  F_INCACHE_SET=%d  F_COPYCACHE_SET=%d  isIn=%d\n", cacheIndex, F_THROUGH_SET, F_INCACHE_SET, F_COPYCACHE_SET, isIn);
 	
@@ -287,6 +343,61 @@ void cacheClear_box(Cache *c)
 	
 }
 
+void ncachePut_box(ncache *c, int index[], void* send, unsigned flags)
+{
+	
+}
+
+void ncacheGet_box(ncache *c, int index[], void** recv, unsigned flags)
+{
+	
+}
+
+void ncacheGetInBuffer_box(ncache *c, int index[], void** recv, unsigned flags)
+{
+	
+}
+
+void ncachePutLine_box(ncache *c, int index[], void* send, int size, unsigned flags)
+{
+	
+}
+
+void ncacheGetLine_box(ncache *c, int index[], void** recv, int size, unsigned flags)
+{
+	
+}
+
+void ncacheGetLineInBuffer_box(ncache *c, int index[], void* recv, int size, unsigned flags)
+{
+	
+}
+
+void ncachePutBlock_box(ncache *c, int index[], void* send, int sizes[], unsigned flags)
+{
+	
+}
+
+void ncacheGetBlock_box(ncache *c, int index[], void** recv, int sizes[], unsigned flags)
+{
+	
+}
+
+void ncacheGetBlockInBuffer_box(ncache *c, int index[], void* recv, int sizes[], unsigned flags)
+{
+	
+}
+
+void ncacheFlush_box(ncache *c)
+{
+	
+}
+
+void ncacheClear_box(ncache *c)
+{
+	
+}
+
 void cacheFence(Cache *c)
 {
 	assert(c);
@@ -297,4 +408,9 @@ void cacheFence(Cache *c)
 		case TAarray2:array2Fence((array2*)(c->real_array));break;
 		default:assert(0);break;
 	}
+}
+
+void ncacheFence(ncache *c)
+{
+	
 }

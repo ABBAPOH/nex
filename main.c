@@ -1100,7 +1100,7 @@ void testtasksA(Tasks *t)
 	
 	
 	for(i=0;i<5;i++)
-		taskIndexes[i]=tasksAddTask(t, datas[i], (i<2)?gr1:gr2, 1, 1);
+		taskIndexes[i] = tasksAddTask(t, datas[i], (i<2)?gr1:gr2, 1, 1);
 	
 	tasksAddTaskDep(t, taskIndexes[0], taskIndexes[4]);
 	tasksAddTaskDep(t, taskIndexes[1], taskIndexes[4]);

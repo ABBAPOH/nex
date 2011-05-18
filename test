@@ -1,4 +1,4 @@
-/* compiled from: . */
+/* compiled from: . */lib-DVM, GASNet, ARMCI,  RCCE и MCAPI
 /* /usr/include/libio.h:416:NC */ extern int __underflow (_IO_FILE *);
 /* /usr/include/libio.h:417:NC */ extern int __uflow (_IO_FILE *);
 /* /usr/include/libio.h:418:NC */ extern int __overflow (_IO_FILE *, int);

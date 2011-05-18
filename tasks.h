@@ -47,11 +47,4 @@ void tasksFree(Tasks* t);
 void taskGroupFree(TaskGroup* tg);
 void taskFree(Task* t);
 
-//void cachePut_box(Cache *c, abstractPointer p, void* send, unsigned flags);
-//void cacheGet_box(Cache *c, abstractPointer p, void** recv, unsigned flags);
-//void cacheFlush_box(Cache *c);
-//void cacheClear_box(Cache *c);
-
-//void cacheFence(Cache *c);
-
 #endif
