@@ -15,6 +15,7 @@ set( HEADERS
     grid2.h
     main.h
     narray.h
+    nloop.h
     ntree.h
     range.h
     tasks.h
@@ -30,6 +31,7 @@ set( SOURCES
     grid2.c
     main.c
     narray.c
+    nloop.c
     ntree.c
     range.c
     tasks.c

@@ -6,8 +6,8 @@
 #include "fgridn.h"
 #include "narray.h"
 
-typedef int ((*)(nloop_work_func))(nloop* loop, int index[], void* data);
-typedef int ((*)(nloop_depend_func))(nloop* loop, int index[], int indexDep[], void* data);
+typedef int (*nloop_work_func)(struct nlooptemp * loop, int index[], void* data);
+typedef int (*nloop_depend_func)(struct nlooptemp * loop, int index[], int indexDep[], void* data);
 
 typedef struct nlooptemp 
 {

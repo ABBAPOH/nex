@@ -15,7 +15,7 @@ int nloopDo(nloop *loop, int index[], void* data)
 	
 }
 
-int nloopDoWithDeps(nloop *loop, int index[], void* data);
+int nloopDoWithDeps(nloop *loop, int index[], void* data)
 {
 	
 }
