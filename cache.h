@@ -47,6 +47,10 @@ void cacheFree(Cache* c);
 void ncacheBoxFromnarray(ncache* c, narray* na);
 void ncacheFree(ncache* c);
 
+long long ncacheIndexToGlobalOffset(ncache *c, int index[]);
+void ncacheGlobalOffsetToIndex(ncache *c, long long offset, int index[]);
+void ncacheIncIndex(ncache *c, int index[], int sizes[]);
+void ncacheIndexBlockToGlobalOffset(ncache *c, int index[], int sizes[], long long *result);
 
 void cachePut_box(Cache *c, abstractPointer p, void* send, unsigned flags);
 void cacheGet_box(Cache *c, abstractPointer p, void** recv, unsigned flags);

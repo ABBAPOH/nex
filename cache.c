@@ -343,59 +343,649 @@ void cacheClear_box(Cache *c)
 	
 }
 
+long long ncacheIndexToGlobalOffset(ncache *c, int index[])
+{
+	assert(c);
+	assert(index);
+	
+	int i;
+	long long result;
+	
+	for(i=0; i<(c->array->dimsCount - 1); i++)
+	{
+		result += index[i];
+		result *= c->array->sizes[i+1];
+	}
+	result += index[i];
+	
+	return result;
+}
+
+void ncacheGlobalOffsetToIndex(ncache *c, long long offset, int index[])
+{
+	assert(c);
+	assert(index);
+	
+	int i;
+	
+	for(i=(c->array->dimsCount - 1); i>=0; i++)
+	{
+		index[i] = offset % c->array->sizes[i];
+		offset = offset / c->array->sizes[i];
+	}
+}
+
+void ncacheIncIndex(ncache *c, int index[], int sizes[])
+{
+	assert(c);
+	assert(index);
+	assert(sizes);
+	
+	int i;
+	
+	for(i=c->array->dimsCount-1; i>=0; i--)
+	{
+		index[i] += 1;
+		if(index[i] < sizes[i])
+			break;
+		else
+			index[i] = 0;
+	}
+	
+	//assert(index[i] >= sizes[i]);
+	
+}
+
+void ncacheIndexBlockToGlobalOffset(ncache *c, int index[], int sizes[], long long *result)
+{
+	assert(c);
+	assert(index);
+	assert(sizes);
+	assert(result);
+	
+	int i;
+	int totalSize = 1;
+	int* index2 = malloc(sizeof(int) * c->array->dimsCount);
+	
+	for(i=0; i<c->array->dimsCount; i++)
+	{
+		assert((sizes[i] > 0) && (sizes[i] <= c->array->sizes[i]));
+		totalSize *= sizes[i];
+		index2[i] = index[i];
+	}
+	
+	for(i=0; i<totalSize; i++)
+	{
+		result[i] = ncacheIndexToGlobalOffset(c, index2);
+		ncacheIncIndex(c, index2, sizes);
+	}
+	
+	free(index2);
+}
+
 void ncachePut_box(ncache *c, int index[], void* send, unsigned flags)
 {
+	assert(c);
+	assert(index);
+	assert(send);
+	assert(c->type == Tbox);
+	
+	long long cacheIndex = ncacheIndexToGlobalOffset(c, index);
+	
+	char F_THROUGH_SET = flags & F_THROUGH;
+	char F_INCACHE_SET = flags & F_INCACHE;
+	char F_COPYCACHE_SET = flags & F_COPYCACHE;
+	
+	BoxHeader* realCache = (BoxHeader*)(c->real_cache);
+	char isIn = (boxGet(realCache, cacheIndex) != NULL);
+	
+	printf("ncachePut_box(%d)  :  F_THROUGH_SET=%d  F_INCACHE_SET=%d  F_COPYCACHE_SET=%d  isIn=%d\n", cacheIndex, F_THROUGH_SET, F_INCACHE_SET, F_COPYCACHE_SET, isIn);
+	
+	if(isIn)
+		if(F_THROUGH_SET)
+		{
+			if(F_COPYCACHE_SET)
+				boxPut(realCache, cacheIndex, send);
+			else
+				boxPutNoCopy(realCache, cacheIndex, send);
+			
+			narrayPut(c->array, index, send);
+		}
+		else
+		{
+			if(F_COPYCACHE_SET)
+				boxPut(realCache, cacheIndex, send);
+			else
+				boxPutNoCopy(realCache, cacheIndex, send);
+		}
+	else
+		if(F_INCACHE_SET)
+		{
+			if(F_COPYCACHE_SET)
+				boxPut(realCache, cacheIndex, send);
+			else
+				boxPutNoCopy(realCache, cacheIndex, send);
+			
+			narrayPut(c->array, index, send);
+		}
+		else
+		{
+			narrayPut(c->array, index, send);
+		}
 	
 }
 
 void ncacheGet_box(ncache *c, int index[], void** recv, unsigned flags)
 {
+	assert(c);
+	assert(index);
+	assert(recv);
+	assert(c->type == Tbox);
 	
+	long long cacheIndex = ncacheIndexToGlobalOffset(c, index);
+	
+	char F_THROUGH_SET = flags & F_THROUGH;
+	char F_INCACHE_SET = flags & F_INCACHE;
+	char F_COPYCACHE_SET = flags & F_COPYCACHE;
+	//char F_COPYCACHE_SET = 1;
+	
+	BoxHeader* realCache = (BoxHeader*)(c->real_cache);
+	char isIn = (boxGet(realCache, cacheIndex) != NULL);
+	
+	int realDataSize = c->array->objSize;
+	
+	printf("ncacheGet_box(%d)  :  F_THROUGH_SET=%d  F_INCACHE_SET=%d  F_COPYCACHE_SET=%d  isIn=%d\n", cacheIndex, F_THROUGH_SET, F_INCACHE_SET, F_COPYCACHE_SET, isIn);
+	
+	if(isIn)
+		if(F_THROUGH_SET)
+		{
+			narrayGet(c->array, index, recv);
+			
+			if(F_COPYCACHE_SET)
+				boxPut(realCache, cacheIndex, *recv);
+			else
+				boxPutNoCopy(realCache, cacheIndex, *recv);
+		}
+		else
+		{
+			if(F_COPYCACHE_SET)
+			{
+				void* temp = boxGet(realCache, cacheIndex);
+				*recv = malloc(realDataSize);
+				memcpy(*recv, temp, realDataSize);
+			}
+			else
+				*recv = boxGet(realCache, cacheIndex);
+		}
+	else
+		if(F_INCACHE_SET)
+		{
+			narrayGet(c->array, index, recv);
+			
+			if(F_COPYCACHE_SET)
+				boxPut(realCache, cacheIndex, *recv);
+			else
+				boxPutNoCopy(realCache, cacheIndex, *recv);
+		}
+		else
+		{
+			narrayGet(c->array, index, recv);
+		}
 }
 
 void ncacheGetInBuffer_box(ncache *c, int index[], void** recv, unsigned flags)
 {
+	assert(c);
+	assert(index);
+	assert(recv);
+	assert(c->type == Tbox);
 	
+	long long cacheIndex = ncacheIndexToGlobalOffset(c, index);
+	
+	char F_THROUGH_SET = flags & F_THROUGH;
+	char F_INCACHE_SET = flags & F_INCACHE;
+	//char F_COPYCACHE_SET = flags & F_COPYCACHE;
+	char F_COPYCACHE_SET = 1;//cos it is getInBuffer
+	
+	BoxHeader* realCache = (BoxHeader*)(c->real_cache);
+	char isIn = (boxGet(realCache, cacheIndex) != NULL);
+	
+	int realDataSize = c->array->objSize;
+	
+	printf("ncacheGetInBuffer_box(%d)  :  F_THROUGH_SET=%d  F_INCACHE_SET=%d  F_COPYCACHE_SET=%d  isIn=%d\n", cacheIndex, F_THROUGH_SET, F_INCACHE_SET, F_COPYCACHE_SET, isIn);
+	
+	if(isIn)
+		if(F_THROUGH_SET)
+		{
+			narrayGetInBuffer(c->array, index, recv);
+			
+			if(F_COPYCACHE_SET)
+			{
+				boxPut(realCache, cacheIndex, recv);
+			}
+			else
+			{
+				//copy_cache should be always set
+				//boxPutNoCopy(realCache, cacheIndex, recv);
+			}
+		}
+		else
+		{
+			if(F_COPYCACHE_SET)
+			{
+				void* temp = boxGet(realCache, cacheIndex);
+				memcpy(recv, temp, realDataSize);
+			}
+			else
+			{
+				//recv = boxGet(realCache, cacheIndex);
+				//nothing actually
+			}
+		}
+	else
+		if(F_INCACHE_SET)
+		{
+			narrayGetInBuffer(c->array, index, recv);
+			
+			if(F_COPYCACHE_SET)
+			{
+				boxPut(realCache, cacheIndex, recv);
+			}
+			else
+			{
+				//recv = boxGet(realCache, cacheIndex);
+				//nothing actually
+			}
+		}
+		else
+		{
+			narrayGetInBuffer(c->array, index, recv);
+		}
 }
 
 void ncachePutLine_box(ncache *c, int index[], void* send, int size, unsigned flags)
 {
+	assert(c);
+	assert(index);
+	assert(send);
+	assert(size > 0);
+	assert(size <= c->array->sizes[c->array->dimsCount - 1]);
+	assert(c->type == Tbox);
 	
+	char F_THROUGH_SET = flags & F_THROUGH;
+	char F_INCACHE_SET = flags & F_INCACHE;
+	char F_COPYCACHE_SET = flags & F_COPYCACHE;
+	
+	BoxHeader* realCache = (BoxHeader*)(c->real_cache);
+	int realDataSize = c->array->objSize;
+	
+	int i;
+	long long* cacheIndexes = malloc(sizeof(long long) * size);
+	ncacheIndexBlockToGlobalOffset(c, index, &size, cacheIndexes);
+	
+	int isIn = 0;
+	for(i=0; i<size; i++)
+		isIn = isIn || (boxGet(realCache, cacheIndexes[i]) != NULL);
+	
+	printf("ncachePutLine_box  :  F_THROUGH_SET=%d  F_INCACHE_SET=%d  F_COPYCACHE_SET=%d  isIn=%d\n", F_THROUGH_SET, F_INCACHE_SET, F_COPYCACHE_SET, isIn);
+	
+	if(isIn)
+		if(F_THROUGH_SET)
+		{
+			if(F_COPYCACHE_SET)
+				for(i=0; i<size; i++)
+					boxPut(realCache, cacheIndexes[i], send + i*realDataSize);
+			else
+				for(i=0; i<size; i++)
+					boxPutNoCopy(realCache, cacheIndexes[i], send + i*realDataSize);
+			
+			narrayPutLine(c->array, index, send, size);
+		}
+		else
+		{
+			if(F_COPYCACHE_SET)
+				for(i=0; i<size; i++)
+					boxPut(realCache, cacheIndexes[i], send + i*realDataSize);
+			else
+				for(i=0; i<size; i++)
+					boxPutNoCopy(realCache, cacheIndexes[i], send + i*realDataSize);
+		}
+	else
+		if(F_INCACHE_SET)
+		{
+			if(F_COPYCACHE_SET)
+				for(i=0; i<size; i++)
+					boxPut(realCache, cacheIndexes[i], send + i*realDataSize);
+			else
+				for(i=0; i<size; i++)
+					boxPutNoCopy(realCache, cacheIndexes[i], send + i*realDataSize);
+			
+			narrayPutLine(c->array, index, send, size);
+		}
+		else
+		{
+			narrayPutLine(c->array, index, send, size);
+		}
+	
+	free(cacheIndexes);
 }
 
 void ncacheGetLine_box(ncache *c, int index[], void** recv, int size, unsigned flags)
 {
+	assert(c);
+	assert(index);
+	assert(recv);
+	assert(c->type == Tbox);
+	assert(size > 0);
+	assert(size <= c->array->sizes[c->array->dimsCount - 1]);
 	
+	char F_THROUGH_SET = flags & F_THROUGH;
+	char F_INCACHE_SET = flags & F_INCACHE;
+	//char F_COPYCACHE_SET = flags & F_COPYCACHE;
+	char F_COPYCACHE_SET = 1;
+	
+	BoxHeader* realCache = (BoxHeader*)(c->real_cache);
+	
+	int i;
+	
+	long long* cacheIndexes = malloc(sizeof(long long) * size);
+	ncacheIndexBlockToGlobalOffset(c, index, &size, cacheIndexes);
+	
+	int isIn = 0;
+	for(i=0; i<size; i++)
+		isIn = isIn || (boxGet(realCache, cacheIndexes[i]) != NULL);
+	
+	int realDataSize = c->array->objSize;
+	
+	printf("ncacheGetLine_box  :  F_THROUGH_SET=%d  F_INCACHE_SET=%d  F_COPYCACHE_SET=%d  isIn=%d\n", F_THROUGH_SET, F_INCACHE_SET, F_COPYCACHE_SET, isIn);
+	
+	if(isIn)
+		if(F_THROUGH_SET)
+		{
+			narrayGetLine(c->array, index, recv, size);
+			
+			if(F_COPYCACHE_SET)
+				for(i=0; i<size; i++)
+					boxPut(realCache, cacheIndexes[i], *recv + i*realDataSize);
+			else
+				for(i=0; i<size; i++)
+					boxPutNoCopy(realCache, cacheIndexes[i], *recv + i*realDataSize);
+		}
+		else
+		{
+			if(F_COPYCACHE_SET)
+			{
+				*recv = malloc(realDataSize * size);
+				memset(*recv, 0, realDataSize * size);
+				
+				void* ptr;
+				for(i=0; i<size; i++)
+				{
+					ptr = boxGet(realCache, cacheIndexes[i]);
+					if(ptr != NULL)
+						memcpy(*recv + i*realDataSize, ptr, realDataSize);
+				}
+			}
+			else
+			{
+				//nothing to do. unreachable
+				//*recv = boxGet(realCache, cacheIndex);
+			}
+		}
+	else
+		if(F_INCACHE_SET)
+		{
+			narrayGetLine(c->array, index, recv, size);
+			
+			if(F_COPYCACHE_SET)
+				for(i=0; i<size; i++)
+					boxPut(realCache, cacheIndexes[i], *recv + i*realDataSize);
+			else
+				for(i=0; i<size; i++)
+					boxPutNoCopy(realCache, cacheIndexes[i], *recv + i*realDataSize);
+		}
+		else
+		{
+			narrayGetLine(c->array, index, recv, size);
+		}
+	
+	free(cacheIndexes);
 }
 
 void ncacheGetLineInBuffer_box(ncache *c, int index[], void* recv, int size, unsigned flags)
 {
+	assert(c);
+	assert(index);
+	assert(recv);
+	assert(c->type == Tbox);
+	assert(size > 0);
+	assert(size <= c->array->sizes[c->array->dimsCount - 1]);
 	
+	char F_THROUGH_SET = flags & F_THROUGH;
+	char F_INCACHE_SET = flags & F_INCACHE;
+	//char F_COPYCACHE_SET = flags & F_COPYCACHE;
+	char F_COPYCACHE_SET = 1;
+	
+	BoxHeader* realCache = (BoxHeader*)(c->real_cache);
+	
+	int i;
+	
+	long long* cacheIndexes = malloc(sizeof(long long) * size);
+	ncacheIndexBlockToGlobalOffset(c, index, &size, cacheIndexes);
+	
+	int isIn = 0;
+	for(i=0; i<size; i++)
+		isIn = isIn || (boxGet(realCache, cacheIndexes[i]) != NULL);
+	
+	int realDataSize = c->array->objSize;
+	
+	printf("ncacheGetLineInBuffer_box  :  F_THROUGH_SET=%d  F_INCACHE_SET=%d  F_COPYCACHE_SET=%d  isIn=%d\n", F_THROUGH_SET, F_INCACHE_SET, F_COPYCACHE_SET, isIn);
+	
+	if(isIn)
+		if(F_THROUGH_SET)
+		{
+			narrayGetLineInBuffer(c->array, index, recv, size);
+			
+			if(F_COPYCACHE_SET)
+				for(i=0; i<size; i++)
+					boxPut(realCache, cacheIndexes[i], recv + i*realDataSize);
+			else
+			{
+				//should do nothing
+				/*for(i=0; i<size; i++)
+					boxPutNoCopy(realCache, cacheIndexes[i], *recv + i*realDataSize);*/
+			}
+		}
+		else
+		{
+			if(F_COPYCACHE_SET)
+			{
+				memset(recv, 0, realDataSize * size);
+				
+				void* ptr;
+				for(i=0; i<size; i++)
+				{
+					ptr = boxGet(realCache, cacheIndexes[i]);
+					if(ptr != NULL)
+						memcpy(recv + i*realDataSize, ptr, realDataSize);
+				}
+			}
+			else
+			{
+				//nothing to do. unreachable
+				//recv = boxGet(realCache, cacheIndex);
+			}
+		}
+	else
+		if(F_INCACHE_SET)
+		{
+			narrayGetLineInBuffer(c->array, index, recv, size);
+			
+			if(F_COPYCACHE_SET)
+				for(i=0; i<size; i++)
+					boxPut(realCache, cacheIndexes[i], recv + i*realDataSize);
+			else
+			{
+				//should do nothing
+				/*for(i=0; i<size; i++)
+					boxPutNoCopy(realCache, cacheIndexes[i], recv + i*realDataSize);*/
+			}
+		}
+		else
+		{
+			narrayGetLineInBuffer(c->array, index, recv, size);
+		}
+	
+	free(cacheIndexes);
 }
 
 void ncachePutBlock_box(ncache *c, int index[], void* send, int sizes[], unsigned flags)
 {
+	assert(c);
+	assert(send);
+	assert(index);
+	assert(sizes != NULL);
 	
+	int i;
+	int j;
+	
+	for(i=0; i<c->array->dimsCount; i++)
+		assert((sizes[i] > 0) && (sizes[i] <= c->array->sizes[i]));
+	
+	int* index2 = malloc(sizeof(int) * c->array->dimsCount);
+	int linesCount = 1;
+	int lineOffset = 0; // in terms of objects, not bytes
+	
+	for(i=0; i<c->array->dimsCount; i++)
+	{
+		index2[i] = index[i];
+		linesCount *= sizes[i];
+	}
+	linesCount /= sizes[c->array->dimsCount - 1];
+	
+	for(i=0; i<linesCount; i++)
+	{
+		//make index2 point to line[i]
+		int lineNum = i;
+		
+		for(j = c->array->dimsCount-2 ; j >= 0; j--)
+		{
+			index2[j] = (lineNum % sizes[j]);
+			lineNum = lineNum / sizes[j];
+		}
+		index2[c->array->dimsCount - 1] = 0;
+		
+		for(j=0; j<c->array->dimsCount; j++)
+		{
+			index2[j] += index[j];
+		}
+		
+		ncachePutLine_box(c, index2, send + lineOffset*c->array->objSize, sizes[c->array->dimsCount - 1], flags);
+		lineOffset += sizes[c->array->dimsCount - 1];
+	}
+	
+	free(index2);
 }
 
 void ncacheGetBlock_box(ncache *c, int index[], void** recv, int sizes[], unsigned flags)
 {
+	assert(c);
+	assert(recv);
+	assert(index);
+	assert(sizes);
 	
+	int i;
+	int blockSize = 1;
+	
+	for(i=0; i<c->array->dimsCount; i++)
+	{
+		assert((sizes[i] > 0) && (sizes[i] <= c->array->sizes[i]));
+		blockSize *= sizes[i];
+	}
+	
+	*recv = malloc(c->array->objSize * blockSize);
+	
+	ncacheGetBlockInBuffer_box(c, index, recv, sizes, flags);
 }
 
 void ncacheGetBlockInBuffer_box(ncache *c, int index[], void* recv, int sizes[], unsigned flags)
 {
+	assert(c);
+	assert(recv);
+	assert(index);
+	assert(sizes != NULL);
 	
+	int i;
+	int j;
+	
+	for(i=0; i<c->array->dimsCount; i++)
+		assert((sizes[i] > 0) && (sizes[i] <= c->array->sizes[i]));
+	
+	int* index2 = malloc(sizeof(int) * c->array->dimsCount);
+	int linesCount = 1;
+	int lineOffset = 0; // in terms of objects, not bytes
+	
+	for(i=0; i<c->array->dimsCount; i++)
+	{
+		index2[i] = index[i];
+		linesCount *= sizes[i];
+	}
+	linesCount /= sizes[c->array->dimsCount - 1];
+	
+	for(i=0; i<linesCount; i++)
+	{
+		//make index2 point to line[i]
+		int lineNum = i;
+		
+		for(j = c->array->dimsCount-2 ; j >= 0; j--)
+		{
+			index2[j] = (lineNum % sizes[j]);
+			lineNum = lineNum / sizes[j];
+		}
+		index2[c->array->dimsCount - 1] = 0;
+		
+		for(j=0; j<c->array->dimsCount; j++)
+		{
+			index2[j] += index[j];
+		}
+		
+		ncacheGetLineInBuffer_box(c, index2, recv + lineOffset*c->array->objSize,sizes[c->array->dimsCount - 1], flags);
+		
+		lineOffset += sizes[c->array->dimsCount - 1];
+	}
+	
+	free(index2);
+}
+
+void ncacheMapFlush_box(void* obj, long long index, BoxHeader *bh, void* ext)
+{
+	ncache* c = (ncache*)ext;
+	
+	int* index2 = malloc(sizeof(int) * c->array->dimsCount);
+	
+	ncacheGlobalOffsetToIndex(c, index, index2);
+	ncachePut_box(c, index2, obj, F_THROUGH | F_COPYCACHE);
+	
+	free(index2);
 }
 
 void ncacheFlush_box(ncache *c)
 {
+	assert(c);
+	assert(c->type == Tbox);
 	
+	boxMapAll((BoxHeader*)(c->real_cache), ncacheMapFlush_box, c);
 }
 
 void ncacheClear_box(ncache *c)
 {
+	assert(c);
+	assert(c->type == Tbox);
 	
+	boxFree((BoxHeader*)(c->real_cache));
+	int real_size = c->array->objSize;
+	
+	boxFromNative((BoxHeader*)(c->real_cache), real_size);
 }
 
 void cacheFence(Cache *c)
@@ -412,5 +1002,6 @@ void cacheFence(Cache *c)
 
 void ncacheFence(ncache *c)
 {
-	
+	assert(c);
+	narrayFence(c->array);
 }
