@@ -14,4 +14,4 @@ thoughts.txt
 test
 *.o
 nex
-
+CMakeLists.txt.*user
