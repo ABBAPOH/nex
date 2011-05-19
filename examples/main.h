@@ -13,6 +13,7 @@
 #include "box.h"
 #include "cache.h"
 #include "tasks.h"
+#include "nloop.h"
 
 int numtasks,rank;
 
